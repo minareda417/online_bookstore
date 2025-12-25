@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException, Query
 from db import get_db
-from schemas import CartItemCreate
+from schemas import CartItemCreate, CustomerUpdate
 from datetime import date
+import hashlib
 
 router = APIRouter(prefix="/customer", tags=["Customer"])
 
@@ -147,3 +148,60 @@ def order_history(customer_id: int):
         })
     
     return list(grouped_orders.values())
+
+
+@router.put("update-data/{customer_id}")
+def update_customer_data(customer_id: int, update: CustomerUpdate):
+    conn = get_db()
+    cur = conn.cursor(dictionary=True)
+    
+    fields = []
+    values = []
+    
+    # handle password update separately
+    if update.new_password is not None:
+        if update.prev_password is None:
+            raise HTTPException(400, "Previous password is required to update password")
+        
+        # verify previous password
+        cur.execute("SELECT password FROM customer WHERE customer_id=%s", (customer_id,))
+        customer = cur.fetchone()
+        if not customer:
+            raise HTTPException(404, "Customer not found")
+        
+        hashed_prev = hashlib.sha256(update.prev_password.encode()).hexdigest()
+        if hashed_prev != customer["password"]:
+            raise HTTPException(400, "Previous password is incorrect")
+        
+        # hash new password
+        hashed_new = hashlib.sha256(update.new_password.encode()).hexdigest()
+        fields.append("password=%s")
+        values.append(hashed_new)
+    
+    if update.first_name is not None:
+        fields.append("first_name=%s")
+        values.append(update.first_name)
+    if update.last_name is not None:
+        fields.append("last_name=%s")
+        values.append(update.last_name)
+    if update.email is not None:
+        fields.append("email=%s")
+        values.append(update.email)
+    if update.phone_number is not None:
+        fields.append("phone_number=%s")
+        values.append(update.phone_number)
+    if update.shipping_address is not None:
+        fields.append("shipping_address=%s")
+        values.append(update.shipping_address)
+    
+    
+    if not fields:
+        raise HTTPException(400, "No fields to update")
+    
+    values.append(customer_id)
+    sql = f"UPDATE customer SET {', '.join(fields)} WHERE customer_id=%s"
+    
+    cur.execute(sql, tuple(values))
+    conn.commit()
+    
+    return {"message": "Customer data updated successfully"}

@@ -66,8 +66,10 @@ class Checkout(BaseModel):
 
 # customer profile
 class CustomerUpdate(BaseModel):
-    first_name: Optional[str]
-    last_name: Optional[str]
-    email: Optional[EmailStr]
-    phone_number: Optional[str]
-    shipping_address: Optional[str]
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    prev_password: Optional[str] = None
+    new_password: Optional[str] = None
+    phone_number: Optional[str] = None
+    shipping_address: Optional[str] = None
