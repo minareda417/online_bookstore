@@ -28,8 +28,8 @@ CREATE TABLE
         quantity INT DEFAULT 0,
         description TEXT,
         cover_photo VARCHAR(255),
-        FOREIGN KEY (publisher_id) REFERENCES publisher (publisher_id),
-        FOREIGN KEY (category_id) REFERENCES category (category_id)
+        FOREIGN KEY (publisher_id) REFERENCES publisher (publisher_id) ON DELETE SET NULL,
+        FOREIGN KEY (category_id) REFERENCES category (category_id) ON DELETE SET NULL
     );
 
 CREATE TABLE
@@ -43,15 +43,15 @@ CREATE TABLE
         book_isbn VARCHAR(13),
         author_id INT,
         PRIMARY KEY (book_isbn, author_id),
-        FOREIGN KEY (book_isbn) REFERENCES book (isbn),
-        FOREIGN KEY (author_id) REFERENCES author (author_id)
+        FOREIGN KEY (book_isbn) REFERENCES book (isbn) ON DELETE CASCADE,
+        FOREIGN KEY (author_id) REFERENCES author (author_id) ON DELETE CASCADE
     );
 
 CREATE TABLE
     phone_number (
         publisher_id INT,
         phone_number VARCHAR(15) NOT NULL,
-        FOREIGN KEY (publisher_id) REFERENCES publisher (publisher_id)
+        FOREIGN KEY (publisher_id) REFERENCES publisher (publisher_id) ON DELETE CASCADE
     );
 
 CREATE TABLE
@@ -61,12 +61,12 @@ CREATE TABLE
         send_date DATE NOT NULL,
         receive_date DATE,
         quantity INT NOT NULL,
-        status Enum ('confirmed', 'cancelled', 'pending') DEFAULT 'pending',
-        FOREIGN KEY (publisher_id) REFERENCES publisher (publisher_id),
-        FOREIGN KEY (book_isbn) REFERENCES book (isbn)
+        status ENUM ('confirmed', 'cancelled', 'pending') DEFAULT 'pending',
+        FOREIGN KEY (publisher_id) REFERENCES publisher (publisher_id) ON DELETE CASCADE,
+        FOREIGN KEY (book_isbn) REFERENCES book (isbn) ON DELETE CASCADE
     );
 
---- website part---
+-- website part---
 CREATE TABLE
     customer (
         customer_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -86,9 +86,8 @@ CREATE TABLE
         customer_id INT,
         order_date DATETIME DEFAULT CURRENT_TIMESTAMP,
         arrival_date DATETIME,
-        -- status Enum('processing', 'shipped', 'delivered', 'cancelled') DEFAULT 'processing',
-        status Enum ('delivered', 'cancelled', 'pending') DEFAULT 'pending',
-        FOREIGN KEY (customer_id) REFERENCES customer (customer_id)
+        status ENUM ('delivered', 'cancelled', 'pending') DEFAULT 'pending',
+        FOREIGN KEY (customer_id) REFERENCES customer (customer_id) ON DELETE CASCADE
     );
 
 CREATE TABLE
@@ -98,8 +97,8 @@ CREATE TABLE
         quantity INT NOT NULL,
         price DECIMAL(10, 2) NOT NULL,
         PRIMARY KEY (order_id, book_isbn),
-        FOREIGN KEY (order_id) REFERENCES `order` (order_id),
-        FOREIGN KEY (book_isbn) REFERENCES book (isbn)
+        FOREIGN KEY (order_id) REFERENCES `order` (order_id) ON DELETE CASCADE,
+        FOREIGN KEY (book_isbn) REFERENCES book (isbn) ON DELETE CASCADE
     );
 
 CREATE TABLE
@@ -108,8 +107,8 @@ CREATE TABLE
         book_isbn VARCHAR(13),
         quantity INT NOT NULL,
         PRIMARY KEY (customer_id, book_isbn),
-        FOREIGN KEY (customer_id) REFERENCES customer (customer_id),
-        FOREIGN KEY (book_isbn) REFERENCES book (isbn)
+        FOREIGN KEY (customer_id) REFERENCES customer (customer_id) ON DELETE CASCADE,
+        FOREIGN KEY (book_isbn) REFERENCES book (isbn) ON DELETE CASCADE
     );
 
 CREATE TABLE
@@ -123,43 +122,44 @@ CREATE TABLE
     );
 
 -- add triggers
-DELIMITER //
-
+DELIMITER / /
 -- prevent negative stock
-CREATE TRIGGER before_book_update
-BEFORE UPDATE ON book
-FOR EACH ROW
-BEGIN
-    IF NEW.quantity < 0 THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Stock cannot be negative';
-    END IF;
-END;
-//
+CREATE TRIGGER before_book_update BEFORE
+UPDATE ON book FOR EACH ROW BEGIN IF NEW.quantity < 0 THEN SIGNAL SQLSTATE '45000'
+SET
+    MESSAGE_TEXT = 'Stock cannot be negative';
 
+END IF;
+
+END;
+
+/ /
 -- create replenishment order automatically
-CREATE TRIGGER after_book_update
-AFTER UPDATE ON book
-FOR EACH ROW
-BEGIN
-    IF NEW.quantity < NEW.threshold AND OLD.quantity >= OLD.threshold THEN
-        INSERT INTO replenishment_order (publisher_id, book_isbn, send_date, quantity)
-        VALUES (NEW.publisher_id, NEW.isbn, CURDATE(), 20);
-    END IF;
-END;
-//
+CREATE TRIGGER after_book_update AFTER
+UPDATE ON book FOR EACH ROW BEGIN IF NEW.quantity < NEW.threshold
+AND OLD.quantity >= OLD.threshold THEN
+INSERT INTO
+    replenishment_order (publisher_id, book_isbn, send_date, quantity)
+VALUES
+    (NEW.publisher_id, NEW.isbn, CURDATE (), 20);
 
+END IF;
+
+END;
+
+/ /
 -- update stock when order confirmed automatically
-CREATE TRIGGER after_order_confirm
-AFTER UPDATE ON replenishment_order
-FOR EACH ROW
-BEGIN
-    IF NEW.status = 'confirmed' AND OLD.status <> 'confirmed' THEN
-        UPDATE book
-        SET quantity = quantity + NEW.quantity
-        WHERE isbn = NEW.book_isbn;
-    END IF;
-END;
-//
+CREATE TRIGGER after_order_confirm AFTER
+UPDATE ON replenishment_order FOR EACH ROW BEGIN IF NEW.status = 'confirmed'
+AND OLD.status <> 'confirmed' THEN
+UPDATE book
+SET
+    quantity = quantity + NEW.quantity
+WHERE
+    isbn = NEW.book_isbn;
 
-DELIMITER ;
+END IF;
+
+END;
+
+/ / DELIMITER;
