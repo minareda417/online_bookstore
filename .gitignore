@@ -247,3 +247,9 @@ packages/react-devtools-fusebox/dist
 packages/react-devtools-inline/dist
 packages/react-devtools-shell/dist
 packages/react-devtools-timeline/dist
+
+# test files
+book_covers
+selected_books.csv
+insert_books_ordered.sql
+insert_tosql.py

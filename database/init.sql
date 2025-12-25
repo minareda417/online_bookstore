@@ -121,6 +121,13 @@ CREATE TABLE
         `password` VARCHAR(64) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL
     );
+CREATE TABLE
+    credit_card (
+        card_number VARCHAR(16) PRIMARY KEY,
+        customer_id INT,
+        expiration_date DATE NOT NULL,
+        FOREIGN KEY (customer_id) REFERENCES customer (customer_id) ON DELETE CASCADE
+    );
 
 -- add triggers
 DELIMITER //

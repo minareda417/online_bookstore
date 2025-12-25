@@ -73,3 +73,7 @@ class CustomerUpdate(BaseModel):
     new_password: Optional[str] = None
     phone_number: Optional[str] = None
     shipping_address: Optional[str] = None
+    
+class CreditCardCreate(BaseModel):
+    card_number: str
+    expiry_date: str  # in MM/YY format

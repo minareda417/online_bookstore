@@ -112,10 +112,10 @@ def total_sales_last_month():
         FROM `order` o
         JOIN order_item oi ON o.order_id = oi.order_id
         WHERE o.order_date BETWEEN %s AND %s
-    """, (first_day_last_month, last_day_last_month))
+    """, (first_day_last_month, today))
 
     result = cur.fetchone()
-    return {"total_sales_last_month": result["total_sales"] or 0}
+    return {"total_sales_from_last_month_until_today": result["total_sales"] or 0}
 
 
 # total sales on a specific day
@@ -188,7 +188,7 @@ def book_orders_count(isbn: str = Query(..., description="ISBN of the book")):
 
     cur.execute("""
         SELECT COUNT(*) AS times_ordered
-        FROM replenishment_order
+        FROM order_item
         WHERE book_isbn = %s
     """, (isbn,))
 

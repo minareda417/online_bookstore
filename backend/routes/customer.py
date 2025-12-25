@@ -1,10 +1,37 @@
 from fastapi import APIRouter, HTTPException, Query
 from db import get_db
-from schemas import CartItemCreate, CustomerUpdate
-from datetime import date
+from schemas import CartItemCreate, CustomerUpdate,CreditCardCreate
+from datetime import date,datetime
 import hashlib
 
 router = APIRouter(prefix="/customer", tags=["Customer"])
+
+@router.post("/add-credit-card/{customer_id}")
+def add_credit_card(customer_id: int, card: CreditCardCreate):
+    conn = get_db()
+    cur = conn.cursor()
+
+    # validate card length
+    if len(card.card_number) not in [15, 16]:
+        raise HTTPException(400, "Invalid credit card number length")
+    
+    # validate expiry date format
+    try:
+        exp_date = datetime.strptime(card.expiry_date, "%m/%y")
+        exp_date_db = exp_date.strftime("%Y-%m-%d") 
+    except ValueError:
+        raise HTTPException(400, "Expiry date must be in MM/YY format")
+    
+    try:
+        cur.execute("""
+            INSERT INTO credit_card (card_number, customer_id, expiration_date)
+            VALUES (%s, %s, %s)
+        """, (card.card_number, customer_id, exp_date_db))
+        conn.commit()
+    except Exception as e:
+        raise HTTPException(400, f"Error adding card: {str(e)}")
+    
+    return {"message": "Credit card added successfully"}
 
 # add book to cart
 @router.post("/cart")
@@ -60,53 +87,55 @@ def remove_from_cart(customer_id: int, book_isbn: str):
 
 # checkout
 @router.post("/checkout/{customer_id}")
-def checkout(customer_id: int, credit_card_number: str, expiry_date: str):
+def checkout(customer_id: int, card_number: str):
     conn = get_db()
     cur = conn.cursor(dictionary=True)
 
-    # simple credit card validation
-    # TODO: add credit cart Table to database
-    if len(credit_card_number) not in [15, 16]:
-        raise HTTPException(400, "Invalid credit card number")
-    
+    # fetch credit card
+    cur.execute("""
+        SELECT * FROM credit_card
+        WHERE customer_id=%s AND card_number=%s
+    """, (customer_id, card_number))
+    card = cur.fetchone()
+    if not card:
+        raise HTTPException(400, "Credit card not found")
+
+    # check if expired
+    if datetime.now().date() > card['expiration_date']:
+        raise HTTPException(400, "Credit card has expired")
+
     # get cart items
     cur.execute("SELECT * FROM cart WHERE customer_id=%s", (customer_id,))
     cart_items = cur.fetchall()
     if not cart_items:
         raise HTTPException(400, "Cart is empty")
-    
-    # check stock for all items before inserting order
+
+    # check stock for all items
     for item in cart_items:
-        cur.execute("SELECT quantity FROM book WHERE isbn=%s", (item['book_isbn'],))
+        cur.execute("SELECT quantity, selling_price FROM book WHERE isbn=%s", (item['book_isbn'],))
         book = cur.fetchone()
         if not book:
             raise HTTPException(400, f"Book {item['book_isbn']} not found")
         if int(book['quantity']) < int(item['quantity']):
             raise HTTPException(400, f"Not enough stock for {item['book_isbn']}")
-    
-    # insert new order
+
+    # insert order
     cur.execute("INSERT INTO `order` (customer_id) VALUES (%s)", (customer_id,))
     order_id = cur.lastrowid
-    
-    # insert order items and update book quantities
+
+    # insert order items and update stock
     for item in cart_items:
-        # get book info
-        cur.execute("SELECT quantity, selling_price FROM book WHERE isbn=%s", (item['book_isbn'],))
-        book = cur.fetchone()
-        
-        # insert order item
         cur.execute("""
             INSERT INTO order_item (order_id, book_isbn, quantity, price)
             VALUES (%s,%s,%s,%s)
         """, (order_id, item['book_isbn'], item['quantity'], book['selling_price']))
-        
-        # update book stock
         cur.execute("UPDATE book SET quantity = quantity - %s WHERE isbn=%s",
                     (item['quantity'], item['book_isbn']))
-    
+
     # clear cart
     cur.execute("DELETE FROM cart WHERE customer_id=%s", (customer_id,))
     conn.commit()
+
     return {"message": "Checkout successful", "order_id": order_id}
 
 
@@ -205,3 +234,16 @@ def update_customer_data(customer_id: int, update: CustomerUpdate):
     conn.commit()
     
     return {"message": "Customer data updated successfully"}
+
+# logout customer
+@router.post("/logout/{customer_id}")
+def logout(customer_id: int):
+    conn = get_db()
+    cur = conn.cursor()
+    
+    # clear the customer's cart
+    cur.execute("DELETE FROM cart WHERE customer_id=%s", (customer_id,))
+    conn.commit()
+    
+    return {"message": "Customer logged out and cart cleared successfully"}
+

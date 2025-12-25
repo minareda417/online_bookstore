@@ -12,17 +12,15 @@ def register(user: RegisterCustomer):
     cur = conn.cursor()
 
     # check if username exists
-    cur.execute("SELECT COUNT(*) FROM customer WHERE username=%s", 
-                (user.username,))
-    
-    if cur.fetchone() is not None:
+    cur.execute("SELECT COUNT(*) FROM customer WHERE username=%s", (user.username,))
+    if cur.fetchone()[0] > 0:
         raise HTTPException(400, "Username already exists")
-    
+
     # check if email exists
-    cur.execute("SELECT COUNT(*) FROM customer WHERE email=%s", 
-                (user.email,))
-    if cur.fetchone() is not None:
+    cur.execute("SELECT COUNT(*) FROM customer WHERE email=%s", (user.email,))
+    if cur.fetchone()[0] > 0:
         raise HTTPException(400, "Email already exists")
+
 
     # hash password
     hashed_pw = hashlib.sha256(user.password.encode()).hexdigest()
