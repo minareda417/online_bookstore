@@ -142,7 +142,7 @@ AND OLD.quantity >= OLD.threshold THEN
 INSERT INTO
     replenishment_order (publisher_id, book_isbn, send_date, quantity)
 VALUES
-    (NEW.publisher_id, NEW.isbn, CURDATE (), 20);
+    (NEW.publisher_id, NEW.isbn, CURDATE(), 20);
 
 END IF;
 
