@@ -6,6 +6,6 @@ def get_db():
         user="root",
         password="",
         database="bookstore",
-        port=3306
+        port=3306 # TODO: no need to hardcode port so delete later
     )
     return conn
