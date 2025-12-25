@@ -7,7 +7,7 @@ CREATE TABLE
     category (
         category_id INT AUTO_INCREMENT,
         category_name VARCHAR(100) NOT NULL,
-        PRIMARY KEY (book_isbn, author_id)
+        PRIMARY KEY (category_id,category_name)
     );
 
 CREATE TABLE
