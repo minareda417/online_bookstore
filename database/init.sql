@@ -5,8 +5,9 @@ USE bookstore;
 -- book/publisher part---
 CREATE TABLE
     category (
-        category_id INT PRIMARY KEY AUTO_INCREMENT,
-        category_name VARCHAR(100) NOT NULL
+        category_id INT AUTO_INCREMENT,
+        category_name VARCHAR(100) NOT NULL,
+        PRIMARY KEY (category_id,category_name)
     );
 
 CREATE TABLE
@@ -122,7 +123,7 @@ CREATE TABLE
     );
 
 -- add triggers
-DELIMITER / /
+DELIMITER //
 -- prevent negative stock
 CREATE TRIGGER before_book_update BEFORE
 UPDATE ON book FOR EACH ROW BEGIN IF NEW.quantity < 0 THEN SIGNAL SQLSTATE '45000'
@@ -133,7 +134,7 @@ END IF;
 
 END;
 
-/ /
+//
 -- create replenishment order automatically
 CREATE TRIGGER after_book_update AFTER
 UPDATE ON book FOR EACH ROW BEGIN IF NEW.quantity < NEW.threshold
@@ -147,7 +148,7 @@ END IF;
 
 END;
 
-/ /
+//
 -- update stock when order confirmed automatically
 CREATE TRIGGER after_order_confirm AFTER
 UPDATE ON replenishment_order FOR EACH ROW BEGIN IF NEW.status = 'confirmed'
@@ -162,4 +163,4 @@ END IF;
 
 END;
 
-/ / DELIMITER;
+// DELIMITER ;
