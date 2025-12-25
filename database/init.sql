@@ -73,7 +73,7 @@ CREATE TABLE
         first_name VARCHAR(100) NOT NULL,
         last_name VARCHAR(100) NOT NULL,
         username VARCHAR(50) UNIQUE NOT NULL,
-        `password` VARCHAR(255) NOT NULL,
+        `password` VARCHAR(64) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
         phone_number VARCHAR(15),
         `address` VARCHAR(255),
@@ -117,7 +117,7 @@ CREATE TABLE
         first_name VARCHAR(100) NOT NULL,
         last_name VARCHAR(100) NOT NULL,
         username VARCHAR(50) UNIQUE NOT NULL,
-        `password` VARCHAR(255) NOT NULL,
+        `password` VARCHAR(64) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL
     );
 

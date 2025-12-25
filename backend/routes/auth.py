@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from passlib.hash import bcrypt
+import hashlib
 from db import get_db
 from schemas import RegisterCustomer, Login, LoginResponse
 
@@ -25,7 +25,7 @@ def register(user: RegisterCustomer):
         raise HTTPException(400, "Email already exists")
 
     # hash password
-    hashed_pw = bcrypt.hash(user.password)
+    hashed_pw = hashlib.sha256(user.password.encode()).hexdigest()
 
     try:
         cur.execute("""
@@ -61,13 +61,13 @@ def login(data: Login)-> LoginResponse:
     # admin login
     cur.execute("SELECT * FROM admin WHERE username=%s", (username,))
     admin = cur.fetchone()
-    if admin and bcrypt.verify(password, admin["password"]):
+    if admin and hashlib.sha256(password.encode()).hexdigest() == admin["password"]:
         return LoginResponse(user_id=admin["admin_id"], role="admin")
 
     # customer login
     cur.execute("SELECT * FROM customer WHERE username=%s", (username,))
     customer = cur.fetchone()
-    if customer and bcrypt.verify(password, customer["password"]):
+    if customer and hashlib.sha256(password.encode()).hexdigest() == customer["password"]:
         return LoginResponse(user_id=customer["customer_id"], role="customer")
 
     raise HTTPException(401, "Invalid username or password")
