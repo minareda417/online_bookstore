@@ -87,7 +87,7 @@ CREATE TABLE
         order_date DATETIME DEFAULT CURRENT_TIMESTAMP,
         arrival_date DATETIME,
         -- status Enum('processing', 'shipped', 'delivered', 'cancelled') DEFAULT 'processing',
-        status Enum ('confirmed', 'cancelled', 'pending') DEFAULT 'pending',
+        status Enum ('delivered', 'cancelled', 'pending') DEFAULT 'pending',
         FOREIGN KEY (customer_id) REFERENCES customer (customer_id)
     );
 
@@ -120,4 +120,46 @@ CREATE TABLE
         username VARCHAR(50) UNIQUE NOT NULL,
         `password` VARCHAR(255) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL
-    )
+    );
+
+-- add triggers
+DELIMITER //
+
+-- prevent negative stock
+CREATE TRIGGER before_book_update
+BEFORE UPDATE ON book
+FOR EACH ROW
+BEGIN
+    IF NEW.quantity < 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Stock cannot be negative';
+    END IF;
+END;
+//
+
+-- create replenishment order automatically
+CREATE TRIGGER after_book_update
+AFTER UPDATE ON book
+FOR EACH ROW
+BEGIN
+    IF NEW.quantity < NEW.threshold AND OLD.quantity >= OLD.threshold THEN
+        INSERT INTO replenishment_order (publisher_id, book_isbn, send_date, quantity)
+        VALUES (NEW.publisher_id, NEW.isbn, CURDATE(), 20);
+    END IF;
+END;
+//
+
+-- update stock when order confirmed automatically
+CREATE TRIGGER after_order_confirm
+AFTER UPDATE ON replenishment_order
+FOR EACH ROW
+BEGIN
+    IF NEW.status = 'confirmed' AND OLD.status <> 'confirmed' THEN
+        UPDATE book
+        SET quantity = quantity + NEW.quantity
+        WHERE isbn = NEW.book_isbn;
+    END IF;
+END;
+//
+
+DELIMITER ;
