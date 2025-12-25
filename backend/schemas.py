@@ -1,8 +1,14 @@
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 from datetime import date
+from enum import Enum
 
 # authorization
+class UserRole(str, Enum):
+    ADMIN = "admin"
+    CUSTOMER = "customer"
+
+
 class RegisterCustomer(BaseModel):
     first_name: str
     last_name: str
@@ -20,7 +26,7 @@ class Login(BaseModel):
 
 class LoginResponse(BaseModel):
     user_id: int
-    role: str  # "admin" or "customer"
+    role: UserRole
 
 
 # books

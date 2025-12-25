@@ -1,17 +1,31 @@
 from fastapi import APIRouter, HTTPException
 from passlib.hash import bcrypt
 from db import get_db
+from schemas import RegisterCustomer, Login, LoginResponse
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 # customer registration
 @router.post("/register")
-def register(user: dict):
+def register(user: RegisterCustomer):
     conn = get_db()
     cur = conn.cursor()
 
+    # check if username exists
+    cur.execute("SELECT COUNT(*) FROM customer WHERE username=%s", 
+                (user.username,))
+    
+    if cur.fetchone() is not None:
+        raise HTTPException(400, "Username already exists")
+    
+    # check if email exists
+    cur.execute("SELECT COUNT(*) FROM customer WHERE email=%s", 
+                (user.email,))
+    if cur.fetchone() is not None:
+        raise HTTPException(400, "Email already exists")
+
     # hash password
-    hashed_pw = bcrypt.hash(user["password"])
+    hashed_pw = bcrypt.hash(user.password)
 
     try:
         cur.execute("""
@@ -19,13 +33,13 @@ def register(user: dict):
             (first_name, last_name, username, password, email, phone_number, shipping_address)
             VALUES (%s,%s,%s,%s,%s,%s,%s)
         """, (
-            user["first_name"],
-            user["last_name"],
-            user["username"],
+            user.first_name,
+            user.last_name,
+            user.username,
             hashed_pw,
-            user["email"],
-            user.get("phone_number"),
-            user.get("shipping_address")
+            user.email,
+            user.phone_number,
+            user.shipping_address
         ))
         conn.commit()
     except Exception as e:
@@ -36,24 +50,24 @@ def register(user: dict):
 
 # login for both admin and customer
 @router.post("/login")
-def login(data: dict):
+def login(data: Login)-> LoginResponse:
 
     conn = get_db()
     cur = conn.cursor(dictionary=True)
 
-    username = data["username"]
-    password = data["password"]
+    username = data.username
+    password = data.password
 
     # admin login
     cur.execute("SELECT * FROM admin WHERE username=%s", (username,))
     admin = cur.fetchone()
     if admin and bcrypt.verify(password, admin["password"]):
-        return {"user_id": admin["admin_id"], "role": "admin"}
+        return LoginResponse(user_id=admin["admin_id"], role="admin")
 
     # customer login
     cur.execute("SELECT * FROM customer WHERE username=%s", (username,))
     customer = cur.fetchone()
     if customer and bcrypt.verify(password, customer["password"]):
-        return {"user_id": customer["customer_id"], "role": "customer"}
+        return LoginResponse(user_id=customer["customer_id"], role="customer")
 
     raise HTTPException(401, "Invalid username or password")
