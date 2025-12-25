@@ -64,6 +64,7 @@ def checkout(customer_id: int, credit_card_number: str, expiry_date: str):
     cur = conn.cursor(dictionary=True)
 
     # simple credit card validation
+    # TODO: add credit cart Table to database
     if len(credit_card_number) not in [15, 16]:
         raise HTTPException(400, "Invalid credit card number")
     
@@ -73,17 +74,24 @@ def checkout(customer_id: int, credit_card_number: str, expiry_date: str):
     if not cart_items:
         raise HTTPException(400, "Cart is empty")
     
+    # check stock for all items before inserting order
+    for item in cart_items:
+        cur.execute("SELECT quantity FROM book WHERE isbn=%s", (item['book_isbn'],))
+        book = cur.fetchone()
+        if not book:
+            raise HTTPException(400, f"Book {item['book_isbn']} not found")
+        if int(book['quantity']) < int(item['quantity']):
+            raise HTTPException(400, f"Not enough stock for {item['book_isbn']}")
+    
     # insert new order
     cur.execute("INSERT INTO `order` (customer_id) VALUES (%s)", (customer_id,))
     order_id = cur.lastrowid
     
     # insert order items and update book quantities
     for item in cart_items:
-        # check stock
+        # get book info
         cur.execute("SELECT quantity, selling_price FROM book WHERE isbn=%s", (item['book_isbn'],))
         book = cur.fetchone()
-        if book['quantity'] < item['quantity']:
-            raise HTTPException(400, f"Not enough stock for {item['book_isbn']}")
         
         # insert order item
         cur.execute("""
