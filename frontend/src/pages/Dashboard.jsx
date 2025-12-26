@@ -12,12 +12,22 @@ const Dashboard = () => {
   useEffect(() => {
     const fetch = async () => {
       const adminId = localStorage.getItem("id");
-      // For admin, we'll create a mock profile since there's no admin info endpoint
-      setAdminData({
-        username: "Admin",
-        email: "admin@bookstore.com",
-        avatar: "https://cdn-icons-png.flaticon.com/128/3135/3135715.png"
-      });
+      try {
+        const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/admin/getadmininfo?admin_id=${adminId}`);
+        setAdminData({
+          username: response.data.username,
+          email: response.data.email,
+          avatar: "https://cdn-icons-png.flaticon.com/128/3135/3135715.png"
+        });
+      } catch (error) {
+        console.error("Error fetching admin info:", error);
+        // Fallback to mock data if fetch fails
+        setAdminData({
+          username: "Admin",
+          email: "admin@bookstore.com",
+          avatar: "https://cdn-icons-png.flaticon.com/128/3135/3135715.png"
+        });
+      }
     }
     fetch()
   }, [])

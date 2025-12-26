@@ -5,6 +5,23 @@ from datetime import date, timedelta, datetime
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
+# get admin info
+@router.get("/getadmininfo")
+def get_admin_info(admin_id: int = Query(..., description="Admin ID")):
+    conn = get_db()
+    cur = conn.cursor(dictionary=True)
+    
+    cur.execute("""
+        SELECT admin_id, first_name, last_name, username, email
+        FROM admin
+        WHERE admin_id = %s
+    """, (admin_id,))
+    
+    admin = cur.fetchone()
+    if not admin:
+        raise HTTPException(404, "Admin not found")
+    
+    return admin
 # add a book
 @router.post("/books")
 def add_book(book: BookCreate):
@@ -425,7 +442,7 @@ def top_customers():
     return cur.fetchall()
 
 
-# total number of times a specific book has been ordered
+# total number of times a specific book has been ordered (replenishment orders)
 @router.get("/reports/book-orders-count")
 def book_orders_count(isbn: str = Query(..., description="ISBN of the book")):
     conn = get_db()
@@ -433,8 +450,8 @@ def book_orders_count(isbn: str = Query(..., description="ISBN of the book")):
 
     cur.execute("""
         SELECT COUNT(*) AS times_ordered
-        FROM order_item
-        WHERE book_isbn = %s
+        FROM replenishment_order
+        WHERE book_isbn = %s AND status = 'confirmed'
     """, (isbn,))
 
     result = cur.fetchone()

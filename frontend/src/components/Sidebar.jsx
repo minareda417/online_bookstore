@@ -54,6 +54,8 @@ const Sidebar = (props) => {
             (<Link to={isDashboard ? "/dashboard/addauthor" : "/profile/addauthor"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Add Author</Link>)}
           {role === "admin" &&
             (<Link to={isDashboard ? "/dashboard/addpublisher" : "/profile/addpublisher"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Add Publisher</Link>)}
+          {role === "admin" &&
+            (<Link to={isDashboard ? "/dashboard/reports" : "/profile/reports"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Reports</Link>)}
           {role === "user" &&
             (<Link to={isDashboard ? "/dashboard/setting" : "/profile/setting"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider' >Setting</Link>)}
         </div>
@@ -75,6 +77,8 @@ const Sidebar = (props) => {
           (<Link to={isDashboard ? "/dashboard/addauthor" : "/profile/addauthor"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Add Author</Link>)}
         {role === "admin" &&
           (<Link to={isDashboard ? "/dashboard/addpublisher" : "/profile/addpublisher"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Add Publisher</Link>)}
+        {role === "admin" &&
+          (<Link to={isDashboard ? "/dashboard/reports" : "/profile/reports"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Reports</Link>)}
         {role === "user" &&
           (<Link to={isDashboard ? "/dashboard/setting" : "/profile/setting"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider' >Setting</Link>)}
 

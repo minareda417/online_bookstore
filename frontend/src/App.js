@@ -21,6 +21,7 @@ import AddCategory from './components/AddCategory'
 import AddAuthor from './components/AddAuthor'
 import AllOrders from './components/AllOrders'
 import ReplenishmentOrders from './components/ReplenishmentOrders'
+import Reports from './components/Reports'
 import UpdateBook from './pages/UpdateBook'
 import AdminDashboard from './pages/AdminDashboard'
 const App = () => {
@@ -59,6 +60,7 @@ const App = () => {
           <Route path='/dashboard/addcategory' element={<AddCategory />} />
           <Route path='/dashboard/addauthor' element={<AddAuthor />} />
           <Route path='/dashboard/addpublisher' element={<AddPublisher />} />
+          <Route path='/dashboard/reports' element={<Reports />} />
           <Route path='/dashboard/setting' element={<Setting />} />
         </Route>
         <Route path='/signup' element={<Signup />}></Route>
