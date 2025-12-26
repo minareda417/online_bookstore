@@ -32,7 +32,7 @@ const AddBook = () => {
     const submit = async (e) => {
         e.preventDefault();
         try {
-            if (Values.isbn === "" || Values.title === "" || Values.selling_price === "" || Values.authors.length === 0) {
+            if (Values.isbn === "" || Values.title === "" || Values.publisher_id === "" || Values.publication_year === "" || Values.selling_price === "" || Values.category_id === "" || Values.threshold === "" || Values.quantity === "" || Values.description === "" || Values.cover_photo === "" || Values.authors.length === 0) {
                 alert("ISBN, title, price, and at least one author are required");
                 return;
             }

@@ -42,16 +42,20 @@ def add_publisher(publisher: PublisherCreate):
     try:
         # insert publisher
         cur.execute("""
-            INSERT INTO publisher (publisher_id, publisher_name, address)
-            VALUES (%s, %s, %s)
-        """, (publisher.publisher_id, publisher.publisher_name, publisher.address))
+            INSERT INTO publisher (publisher_name, address)
+            VALUES (%s, %s)
+        """, (publisher.publisher_name, publisher.address))
+        
+        # get publisher_id by unique name
+        cur.execute("SELECT publisher_id FROM publisher WHERE publisher_name=%s", (publisher.publisher_name,))
+        publisher_id = cur.fetchone()["publisher_id"]
         
         # insert phone numbers
         for phone in publisher.phone_numbers:
             cur.execute("""
                 INSERT INTO publisher_phone (publisher_id, phone_number)
                 VALUES (%s, %s)
-            """, (publisher.publisher_id, phone))
+            """, (publisher_id, phone))
         
         conn.commit()
     except Exception as e:
