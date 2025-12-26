@@ -63,6 +63,7 @@ CREATE TABLE
         receive_date DATE,
         quantity INT NOT NULL,
         status ENUM ('confirmed', 'cancelled', 'pending') DEFAULT 'pending',
+        PRIMARY KEY (publisher_id, book_isbn),
         FOREIGN KEY (publisher_id) REFERENCES publisher (publisher_id) ON DELETE CASCADE,
         FOREIGN KEY (book_isbn) REFERENCES book (isbn) ON DELETE CASCADE
     );
