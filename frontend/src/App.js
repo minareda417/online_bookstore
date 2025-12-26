@@ -7,7 +7,7 @@ import Dashboard from './pages/Dashboard'
 import Signup from './pages/Signup'
 import Login from './pages/Login'
 import Viewbookdetails from './pages/Viewbookdetails'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Favourites from './components/Favourites'
@@ -22,6 +22,7 @@ import AddAuthor from './components/AddAuthor'
 import AllOrders from './components/AllOrders'
 import ReplenishmentOrders from './components/ReplenishmentOrders'
 import UpdateBook from './pages/UpdateBook'
+import AdminDashboard from './pages/AdminDashboard'
 const App = () => {
 
   const role = useSelector((state) => (state.auth.role));
@@ -64,6 +65,10 @@ const App = () => {
         <Route path='/login' element={<Login />}></Route>
         <Route path='/updatebook/:id' element={<UpdateBook />}></Route>
         <Route path='/getdetails/:id' element={<Viewbookdetails />}></Route>
+        <Route
+          path='/admin/dashboard'
+          element={role === "admin" ? <AdminDashboard /> : <Navigate to="/" />}
+        />
       </Routes>
       <Footer />
 
