@@ -13,7 +13,7 @@ CREATE TABLE
 CREATE TABLE
     publisher (
         publisher_id INT PRIMARY KEY AUTO_INCREMENT,
-        publisher_name VARCHAR(255) NOT NULL,
+        publisher_name VARCHAR(255) NOT NULL UNIQUE,
         address VARCHAR(255)
     );
 
