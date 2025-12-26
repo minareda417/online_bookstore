@@ -92,7 +92,6 @@ class CreditCardCreate(BaseModel):
     expiry_date: str  # in MM/YY format
     
 class PublisherCreate(BaseModel):
-        publisher_id: str
         publisher_name: str
         address: str
         phone_numbers: List[str]

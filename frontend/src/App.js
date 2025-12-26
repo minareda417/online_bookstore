@@ -15,6 +15,10 @@ import Setting from './components/Setting'
 import { useDispatch, useSelector } from 'react-redux'
 import { login, changeRole } from './store/auth'
 import AddBook from './components/AddBook'
+<<<<<<< HEAD
+=======
+import AddPublisher from './components/AddPublisher'
+>>>>>>> baeb8237a11dd24355b5059105e4cef13204eff2
 import AllOrders from './components/AllOrders'
 import UpdateBook from './pages/UpdateBook'
 const App = () => {
@@ -22,7 +26,11 @@ const App = () => {
   const role = useSelector((state) => (state.auth.role));
   const dispatch = useDispatch();
   useEffect(() => {
+<<<<<<< HEAD
     if (localStorage.getItem("id") && localStorage.getItem("role")) {
+=======
+    if (localStorage.getItem("id") && localStorage.getItem("token") && localStorage.getItem("role")) {
+>>>>>>> baeb8237a11dd24355b5059105e4cef13204eff2
       dispatch(login());
       dispatch(changeRole(localStorage.getItem("role")));
     }
@@ -41,7 +49,11 @@ const App = () => {
 
           {(role === "user") ? (<Route index element={<Favourites />}></Route>) : (<Route index element={<AllOrders />}></Route>)}
           {(role === "user") ? (<Route path='/profile/orderhistory' element={<OrderHistory />} />) : (<Route path='/profile/addbooks' element={<AddBook />} />)}
+<<<<<<< HEAD
 
+=======
+          {(role === "user") ? (<Route path='/profile/orderhistory' element={<OrderHistory />} />) : (<Route path='/profile/addpublishers' element={<AddPublisher />} />)}
+>>>>>>> baeb8237a11dd24355b5059105e4cef13204eff2
           <Route path='/profile/setting' element={<Setting />} />
         </Route>
         <Route path='/signup' element={<Signup />}></Route>
@@ -55,6 +67,7 @@ const App = () => {
   )
 }
 
+<<<<<<< HEAD
 export default App
 
 
@@ -79,3 +92,6 @@ export default App
 // }
 
 // export default App;
+=======
+export default App
+>>>>>>> baeb8237a11dd24355b5059105e4cef13204eff2
