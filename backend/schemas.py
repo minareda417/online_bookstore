@@ -63,6 +63,7 @@ class BookDetails(BaseModel):
     description: Optional[str]
     quantity: int
     cover_photo: Optional[str]
+    author: Optional[str]
 
 
 # cart

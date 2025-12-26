@@ -12,7 +12,7 @@ const UpdateBook = () => {
 
   useEffect(() => {
     axios.get(`${process.env.REACT_APP_BASE_URL}/books/${id}`)
-      .then(res => setBook(res.data.data))
+      .then(res => setBook(res.data))
   }, [id])
 
   if (!book) return <div>Loading...</div>
@@ -24,9 +24,8 @@ const UpdateBook = () => {
   const validate = () => {
     const errs = {}
     if (!book.title?.trim()) errs.title = "Title required"
-    if (!book.author?.trim()) errs.author = "Author required"
-    if (!book.desc?.trim()) errs.desc = "Description required"
-    if (!book.price || Number(book.price) <= 0) errs.price = "Invalid price"
+    if (!book.selling_price || Number(book.selling_price) <= 0) errs.selling_price = "Invalid price"
+    if (!book.quantity || Number(book.quantity) < 0) errs.quantity = "Invalid quantity"
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -34,47 +33,72 @@ const UpdateBook = () => {
   const updateBook = async () => {
     if (!validate()) return
 
-    const formData = new FormData()
-    formData.append("title", book.title)
-    formData.append("author", book.author)
-    formData.append("price", book.price)
-    formData.append("desc", book.desc)
-
-    if (image) {
-      formData.append("image", image)
+    const updateData = {
+      title: book.title,
+      selling_price: Number(book.selling_price),
+      quantity: Number(book.quantity)
     }
 
-    await axios.put(
-      `${process.env.REACT_APP_BASE_URL}/updatebook/${id}`,
-      formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
-    )
-
-    navigate(`/books/${id}`)
+    try {
+      await axios.put(
+        `${process.env.REACT_APP_BASE_URL}/admin/books/${id}`,
+        updateData
+      )
+      alert("Book updated successfully")
+      navigate(`/getdetails/${id}`)
+    } catch (error) {
+      alert("Failed to update book: " + error.response?.data?.detail)
+    }
   }
 
   return (
-    <div className="p-6 bg-zinc-900 text-white">
-      <input name="title" value={book.title} onChange={handleChange} />
-      {errors.title && <p>{errors.title}</p>}
+    <div className="p-6 bg-zinc-900 text-white min-h-screen">
+      <h1 className="text-3xl font-bold mb-6">Update Book</h1>
+      
+      <div className="max-w-2xl space-y-4">
+        <div>
+          <label className="block mb-2">Title</label>
+          <input 
+            name="title" 
+            value={book.title || ''} 
+            onChange={handleChange}
+            className="w-full p-2 bg-zinc-800 rounded"
+          />
+          {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
+        </div>
 
-      <input name="author" value={book.author} onChange={handleChange} />
-      {errors.author && <p>{errors.author}</p>}
+        <div>
+          <label className="block mb-2">Price ($)</label>
+          <input 
+            type="number" 
+            step="0.01"
+            name="selling_price" 
+            value={book.selling_price || ''} 
+            onChange={handleChange}
+            className="w-full p-2 bg-zinc-800 rounded"
+          />
+          {errors.selling_price && <p className="text-red-500 text-sm mt-1">{errors.selling_price}</p>}
+        </div>
 
-      <input type="number" name="price" value={book.price} onChange={handleChange} />
-      {errors.price && <p>{errors.price}</p>}
+        <div>
+          <label className="block mb-2">Quantity</label>
+          <input 
+            type="number" 
+            name="quantity" 
+            value={book.quantity || ''} 
+            onChange={handleChange}
+            className="w-full p-2 bg-zinc-800 rounded"
+          />
+          {errors.quantity && <p className="text-red-500 text-sm mt-1">{errors.quantity}</p>}
+        </div>
 
-      <textarea name="desc" value={book.desc} onChange={handleChange} />
-      {errors.desc && <p>{errors.desc}</p>}
-
-      {/* Image upload */}
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => setImage(e.target.files[0])}
-      />
-
-      <button onClick={updateBook}>Update</button>
+        <button 
+          onClick={updateBook}
+          className="bg-blue-500 hover:bg-blue-600 px-6 py-2 rounded mt-4"
+        >
+          Update Book
+        </button>
+      </div>
     </div>
   )
 }

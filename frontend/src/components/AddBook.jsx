@@ -10,6 +10,8 @@ const AddBook = () => {
         authorization: `Bearer ${localStorage.getItem("token")}`,
     }
     const navigate = useNavigate();
+    const [publishers, setPublishers] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [Values, setValues] = useState({
         isbn: "",
         title: "",
@@ -23,6 +25,22 @@ const AddBook = () => {
         cover_photo: "",
         authors: [],
     });
+    
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [publishersRes, categoriesRes] = await Promise.all([
+                    axios.get(`${process.env.REACT_APP_BASE_URL}/admin/publishers`, { headers }),
+                    axios.get(`${process.env.REACT_APP_BASE_URL}/admin/categories`, { headers })
+                ]);
+                setPublishers(publishersRes.data.publishers || []);
+                setCategories(categoriesRes.data.categories || []);
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        };
+        fetchData();
+    }, []);
     
     const change = (e) => {
         const { name, value } = e.target;
@@ -48,7 +66,12 @@ const AddBook = () => {
                 threshold: Values.threshold ? parseInt(Values.threshold) : 10,
                 quantity: Values.quantity ? parseInt(Values.quantity) : 0,
                 description: Values.description || null,
-                cover_photo: Values.cover_photo || null,
+                // If just filename provided, prepend the full path
+                cover_photo: Values.cover_photo ? 
+                    (Values.cover_photo.includes('/') || Values.cover_photo.includes('\\') ? 
+                        Values.cover_photo : 
+                        `C:/Users/Omar Hekal/Downloads/data/book_covers/${Values.cover_photo}`) 
+                    : null,
                 authors: Values.authors.map(id => parseInt(id))
             };
             
@@ -93,15 +116,21 @@ const AddBook = () => {
                     required
                 />
                 
-                <label htmlFor="publisher_id" className='text-zinc-400 font-semibold'>Publisher ID :</label>
-                <input 
-                    type="number" 
+                <label htmlFor="publisher_id" className='text-zinc-400 font-semibold'>Publisher :</label>
+                <select 
                     id='publisher_id' 
                     name='publisher_id' 
                     value={Values.publisher_id}
                     onChange={change} 
-                    className='bg-zinc-900 rounded mb-2 ms-1 mt-1' 
-                />
+                    className='bg-zinc-900 rounded mb-2 ms-1 mt-1 p-2 text-white'
+                >
+                    <option value="">Select Publisher</option>
+                    {publishers.map(publisher => (
+                        <option key={publisher.publisher_id} value={publisher.publisher_id}>
+                            {publisher.publisher_name}
+                        </option>
+                    ))}
+                </select>
                 
                 <label htmlFor="publication_year" className='text-zinc-400 font-semibold'>Publication Year :</label>
                 <input 
@@ -125,15 +154,21 @@ const AddBook = () => {
                     required
                 />
                 
-                <label htmlFor="category_id" className='text-zinc-400 font-semibold'>Category ID :</label>
-                <input 
-                    type="number" 
+                <label htmlFor="category_id" className='text-zinc-400 font-semibold'>Category :</label>
+                <select 
                     id='category_id' 
                     name='category_id' 
                     value={Values.category_id}
                     onChange={change} 
-                    className='bg-zinc-900 rounded mb-2 ms-1 mt-1' 
-                />
+                    className='bg-zinc-900 rounded mb-2 ms-1 mt-1 p-2 text-white'
+                >
+                    <option value="">Select Category</option>
+                    {categories.map(category => (
+                        <option key={category.category_id} value={category.category_id}>
+                            {category.category_name}
+                        </option>
+                    ))}
+                </select>
                 
                 <label htmlFor="threshold" className='text-zinc-400 font-semibold'>Threshold :</label>
                 <input 
@@ -167,15 +202,15 @@ const AddBook = () => {
                     className='bg-zinc-900 rounded mb-2 ms-1 mt-1 p-2' 
                 />
                 
-                <label htmlFor="cover_photo" className='text-zinc-400 font-semibold'>Cover Photo URL :</label>
+                <label htmlFor="cover_photo" className='text-zinc-400 font-semibold'>Cover Photo (filename or full path) :</label>
                 <input 
                     type="text" 
                     id='cover_photo' 
                     name='cover_photo' 
                     value={Values.cover_photo}
                     onChange={change} 
-                    placeholder="https://example.com/image.jpg"
-                    className='bg-zinc-900 rounded mb-2 ms-1 mt-1' 
+                    placeholder="e.g., 9780060654856.jpg or C:/path/to/image.jpg"
+                    className='bg-zinc-900 rounded mb-2 ms-1 mt-1 p-2' 
                 />
                 
                 <label htmlFor="authors" className='text-zinc-400 font-semibold'>Author IDs (comma-separated) :</label>

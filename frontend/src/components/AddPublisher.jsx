@@ -13,7 +13,7 @@ const AddPublisher = () => {
     const [Values, setValues] = useState({
         publisher_name: "",
         address: "",
-        publisher_phone_numbers: []
+        publisher_phone_numbers: ""
     });
     
     const change = (e) => {
@@ -24,7 +24,7 @@ const AddPublisher = () => {
     const submit = async (e) => {
         e.preventDefault();
         try {
-            if (Values.publisher_name === "" || Values.address === "" || Values.publisher_phone_numbers.length === 0) {
+            if (Values.publisher_name === "" || Values.address === "" || Values.publisher_phone_numbers.trim() === "") {
                 alert("All fields are required");
                 return;
             }
@@ -33,7 +33,7 @@ const AddPublisher = () => {
             const publisherData = {
                 publisher_name: Values.publisher_name,
                 address: Values.address,
-                pubLisher_phone_numbers: Values.publisher_phone_numbers.map(phone => phone.trim())
+                phone_numbers: Values.publisher_phone_numbers.split(',').map(phone => phone.trim()).filter(phone => phone)
             };
             
             const response = await axios.post(
@@ -43,7 +43,11 @@ const AddPublisher = () => {
             );
             console.log(response.data);
             alert("Publisher added successfully!");
-            navigate('/allpublishers');
+            setValues({
+                publisher_name: "",
+                address: "",
+                publisher_phone_numbers: ""
+            });
         } catch (error) {
             console.log(error);
             alert(error.response?.data?.detail || "Failed to add publisher");
@@ -80,13 +84,10 @@ const AddPublisher = () => {
                     type="text" 
                     id='publisher_phone_numbers' 
                     name='publisher_phone_numbers' 
-                    value={Values.publisher_phone_numbers.join(',')} 
-                    onChange={(e) => setValues({
-                        ...Values, 
-                        authors: e.target.value.split(',').filter(id => id.trim())
-                    })}
-                    placeholder="e.g., 1,2,3"
-                    className='bg-zinc-900 rounded mb-2 ms-1 mt-1' 
+                    value={Values.publisher_phone_numbers} 
+                    onChange={change}
+                    placeholder="e.g., 123456789, 987654321"
+                    className='bg-zinc-900 rounded mb-2 ms-1 mt-1 p-2' 
                     required
                 />
 

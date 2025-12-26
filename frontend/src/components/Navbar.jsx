@@ -45,7 +45,9 @@ const Navbar = () => {
 
   const fetch = async () => {
     try {
-      const cartValue = await axios.get(`${process.env.REACT_APP_BASE_URL}/customer/getuserinfo`, { headers });
+      const customerId = localStorage.getItem("id");
+      if (!customerId) return;
+      const cartValue = await axios.get(`${process.env.REACT_APP_BASE_URL}/customer/getuserinfo?id=${customerId}`);
       dispatch(cartCount(cartValue.data.cart.length));
     } catch (error) {
       console.log("cart not found please login!!!");
@@ -70,7 +72,7 @@ const Navbar = () => {
 
             <li className=' hover:text-blue-500 transition-all duration-500'><Link to={'/'}>Home</Link></li>
             <li className=' hover:text-blue-500 transition-all duration-500'><Link to={'/allbooks'}>All Books</Link></li>
-            {isLoggedIn &&
+            {isLoggedIn && checkrole === 'user' &&
               <li className=' hover:text-blue-500 transition-all duration-500'><Link to={'/cart'}>Cart</Link></li>
             }
           </ul>
@@ -82,7 +84,8 @@ const Navbar = () => {
           }
           {isLoggedIn &&
             <ul className="hidden items-center gap-4 sm:flex">
-              <li className='px-2 py-1 border border-blue-500 rounded hover:bg-blue-500  transition-all duration-300 '><Link to={'/profile'}><button>Profile</button></Link></li>
+              {checkrole === 'user' && <li className='px-2 py-1 border border-blue-500 rounded hover:bg-blue-500  transition-all duration-300 '><Link to={'/profile'}><button>Profile</button></Link></li>}
+              {checkrole === 'admin' && <li className='px-2 py-1 border border-blue-500 rounded hover:bg-blue-500  transition-all duration-300 '><Link to={'/dashboard'}><button>Dashboard</button></Link></li>}
               <li className='px-2 py-1 bg-red-500 rounded hover:bg-red-600  transition-all duration-300'><button onClick={handleLogout}>Logout</button></li>
             </ul>
           }
@@ -101,7 +104,7 @@ const Navbar = () => {
         <div className="flex">
           {
             !isSidebarOpen && (
-              (isLoggedIn) ? (
+              (isLoggedIn && checkrole === 'user') ? (
                 <Link to='/Cart' className='me-2 text-zinc-400' >Cart</Link>) : (
                 <Link to='/login' className='px-2 py-1 me-2 border border-blue-500 rounded hover:bg-blue-500  transition-all duration-300 '>Login</Link>))
           }
@@ -127,15 +130,19 @@ const Navbar = () => {
                   (<li><Link to='/login' onClick={() => Sidebar()}  >Login</Link></li>)
                 }
                 {
-                  isLoggedIn && isSidebarOpen &&
+                  isLoggedIn && checkrole === 'user' && isSidebarOpen &&
                   (<li><Link to='/cart' onClick={() => Sidebar()}  >Cart</Link></li>)
                 }
                 <hr className='bbg-zinc-200 w-4 mb-2' />
                 {
                   isLoggedIn &&
                   (
-                    <><li><Link to='/profile' onClick={() => Sidebar()}  >Profile</Link></li><hr className='bbg-zinc-200 w-4 mb-2' />
-                    <li><button onClick={() => { Sidebar(); handleLogout(); }} className='text-red-400'>Logout</button></li></>
+                    <>
+                      {checkrole === 'user' && <li><Link to='/profile' onClick={() => Sidebar()}  >Profile</Link></li>}
+                      {checkrole === 'admin' && <li><Link to='/dashboard' onClick={() => Sidebar()}  >Dashboard</Link></li>}
+                      <hr className='bbg-zinc-200 w-4 mb-2' />
+                      <li><button onClick={() => { Sidebar(); handleLogout(); }} className='text-red-400'>Logout</button></li>
+                    </>
                   )
                 }
 

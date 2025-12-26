@@ -21,7 +21,7 @@ def root():
     return {"message": "Online Bookstore API is running"}
 
 # Mount static files for book covers
-book_covers_path = "C:/Users/Omar Hekal/Downloads/data/book_covers"
+book_covers_path = "C:/Users/Omar Hekal/Downloads/data/book_covers/"
 if os.path.exists(book_covers_path):
     app.mount("/covers", StaticFiles(directory=book_covers_path), name="covers")
 

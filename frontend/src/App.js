@@ -3,6 +3,7 @@ import Home from './pages/Home'
 import AllBooks from './pages/AllBooks'
 import Cart from './pages/Cart'
 import Profile from './pages/Profile'
+import Dashboard from './pages/Dashboard'
 import Signup from './pages/Signup'
 import Login from './pages/Login'
 import Viewbookdetails from './pages/Viewbookdetails'
@@ -16,7 +17,10 @@ import { useDispatch, useSelector } from 'react-redux'
 import { login, changeRole } from './store/auth'
 import AddBook from './components/AddBook'
 import AddPublisher from './components/AddPublisher'
+import AddCategory from './components/AddCategory'
+import AddAuthor from './components/AddAuthor'
 import AllOrders from './components/AllOrders'
+import ReplenishmentOrders from './components/ReplenishmentOrders'
 import UpdateBook from './pages/UpdateBook'
 const App = () => {
 
@@ -40,12 +44,21 @@ const App = () => {
         <Route path='/allbooks' element={<AllBooks />}></Route>
         <Route path='/cart' element={<Cart />}></Route>
         <Route path='/profile' element={<Profile />}>
-
           {(role === "user") ? (<Route index element={<OrderHistory />}></Route>) : (<Route index element={<AllOrders />}></Route>)}
           {(role === "user") ? (<Route path='/profile/orderhistory' element={<OrderHistory />} />) : (<Route path='/profile/addbooks' element={<AddBook />} />)}
-
-          {(role === "user") ? (<Route path='/profile/orderhistory' element={<OrderHistory />} />) : (<Route path='/profile/addpublishers' element={<AddPublisher />} />)}
+          {(role === "user") ? (<Route path='/profile/orderhistory' element={<OrderHistory />} />) : (<Route path='/profile/addcategory' element={<AddCategory />} />)}
+          {(role === "user") ? (<Route path='/profile/orderhistory' element={<OrderHistory />} />) : (<Route path='/profile/addauthor' element={<AddAuthor />} />)}
+          {(role === "user") ? (<Route path='/profile/orderhistory' element={<OrderHistory />} />) : (<Route path='/profile/addpublisher' element={<AddPublisher />} />)}
           <Route path='/profile/setting' element={<Setting />} />
+        </Route>
+        <Route path='/dashboard' element={<Dashboard />}>
+          <Route index element={<AllOrders />}></Route>
+          <Route path='/dashboard/replenishment' element={<ReplenishmentOrders />} />
+          <Route path='/dashboard/addbooks' element={<AddBook />} />
+          <Route path='/dashboard/addcategory' element={<AddCategory />} />
+          <Route path='/dashboard/addauthor' element={<AddAuthor />} />
+          <Route path='/dashboard/addpublisher' element={<AddPublisher />} />
+          <Route path='/dashboard/setting' element={<Setting />} />
         </Route>
         <Route path='/signup' element={<Signup />}></Route>
         <Route path='/login' element={<Login />}></Route>

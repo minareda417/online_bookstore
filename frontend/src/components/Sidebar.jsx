@@ -1,7 +1,7 @@
 import React from 'react'
 import { FaArrowRightFromBracket } from 'react-icons/fa6'
 import { useDispatch, useSelector } from 'react-redux'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { changeRole, logout } from '../store/auth'
 import { cartCount } from '../store/cart'
 import axios from 'axios'
@@ -9,6 +9,9 @@ const Sidebar = (props) => {
   const role = useSelector((state) => (state.auth.role));
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isDashboard = location.pathname.startsWith('/dashboard');
+  
   const logoutbtn = async () => {
     try {
       const customerId = localStorage.getItem('id');
@@ -40,10 +43,19 @@ const Sidebar = (props) => {
           {role === "user" &&
             (<Link to="/profile/orderhistory" className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Order History</Link>)}
           {role === "admin" &&
-            (<Link index to="/profile" className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>All Orders</Link>)}
+            (<Link index to={isDashboard ? "/dashboard" : "/profile"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>All Orders</Link>)}
           {role === "admin" &&
-            (<Link to="/profile/addbooks" className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Add Book</Link>)}
-          <Link to="/profile/setting" className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider' >Setting</Link>
+            (<Link to={isDashboard ? "/dashboard/replenishment" : "/profile/replenishment"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Replenishment Orders</Link>)}
+          {role === "admin" &&
+            (<Link to={isDashboard ? "/dashboard/addbooks" : "/profile/addbooks"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Add Book</Link>)}
+          {role === "admin" &&
+            (<Link to={isDashboard ? "/dashboard/addcategory" : "/profile/addcategory"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Add Category</Link>)}
+          {role === "admin" &&
+            (<Link to={isDashboard ? "/dashboard/addauthor" : "/profile/addauthor"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Add Author</Link>)}
+          {role === "admin" &&
+            (<Link to={isDashboard ? "/dashboard/addpublisher" : "/profile/addpublisher"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Add Publisher</Link>)}
+          {role === "user" &&
+            (<Link to={isDashboard ? "/dashboard/setting" : "/profile/setting"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider' >Setting</Link>)}
         </div>
         <button className='bg-zinc-800 text-white font-semibold flex items-center justify-center w-auto sm:w-full  rounded hover:bg-zinc-900 transition-all duration-500 my-6 p-2 hover:tracking-wider' onClick={logoutbtn}>Logout <FaArrowRightFromBracket className='ms-4' /></button>
       </div>
@@ -52,10 +64,19 @@ const Sidebar = (props) => {
         {role === "user" &&
           (<Link to="/profile/orderhistory" className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Order History</Link>)}
         {role === "admin" &&
-          (<Link index to="/profile" className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>All Orders</Link>)}
+          (<Link index to={isDashboard ? "/dashboard" : "/profile"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>All Orders</Link>)}
         {role === "admin" &&
-          (<Link to="/profile/addbooks" className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Add Book</Link>)}
-        <Link to="/profile/setting" className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider' >Setting</Link>
+          (<Link to={isDashboard ? "/dashboard/replenishment" : "/profile/replenishment"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Replenishment Orders</Link>)}
+        {role === "admin" &&
+          (<Link to={isDashboard ? "/dashboard/addbooks" : "/profile/addbooks"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Add Book</Link>)}
+        {role === "admin" &&
+          (<Link to={isDashboard ? "/dashboard/addcategory" : "/profile/addcategory"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Add Category</Link>)}
+        {role === "admin" &&
+          (<Link to={isDashboard ? "/dashboard/addauthor" : "/profile/addauthor"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Add Author</Link>)}
+        {role === "admin" &&
+          (<Link to={isDashboard ? "/dashboard/addpublisher" : "/profile/addpublisher"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Add Publisher</Link>)}
+        {role === "user" &&
+          (<Link to={isDashboard ? "/dashboard/setting" : "/profile/setting"} className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider' >Setting</Link>)}
 
       </div>
       <hr className='sm:hidden w-[50%] flex mx-auto mt-6 ' />

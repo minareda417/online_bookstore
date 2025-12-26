@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Body
 from db import get_db
 from schemas import BookCreate, BookUpdate,PublisherCreate
 from datetime import date, timedelta, datetime
@@ -40,6 +40,11 @@ def add_publisher(publisher: PublisherCreate):
     cur = conn.cursor(dictionary=True)
     
     try:
+        # Check if publisher already exists
+        cur.execute("SELECT publisher_id FROM publisher WHERE publisher_name=%s", (publisher.publisher_name,))
+        if cur.fetchone():
+            raise HTTPException(400, "Publisher with this name already exists")
+        
         # insert publisher
         cur.execute("""
             INSERT INTO publisher (publisher_name, address)
@@ -53,7 +58,7 @@ def add_publisher(publisher: PublisherCreate):
         # insert phone numbers
         for phone in publisher.phone_numbers:
             cur.execute("""
-                INSERT INTO publisher_phone (publisher_id, phone_number)
+                INSERT INTO phone_number (publisher_id, phone_number)
                 VALUES (%s, %s)
             """, (publisher_id, phone))
         
@@ -62,6 +67,68 @@ def add_publisher(publisher: PublisherCreate):
         raise HTTPException(400, f"Failed to add publisher: {e}")
     
     return {"message": "Publisher added successfully"}
+
+# get all publishers
+@router.get("/publishers")
+def get_publishers():
+    conn = get_db()
+    cur = conn.cursor(dictionary=True)
+    
+    cur.execute("SELECT publisher_id, publisher_name, address FROM publisher ORDER BY publisher_name")
+    publishers = cur.fetchall()
+    
+    return {"publishers": publishers}
+
+# get all categories
+@router.get("/categories")
+def get_categories():
+    conn = get_db()
+    cur = conn.cursor(dictionary=True)
+    
+    cur.execute("SELECT category_id, category_name FROM category ORDER BY category_name")
+    categories = cur.fetchall()
+    
+    return {"categories": categories}
+
+# add a category
+@router.post("/categories")
+def add_category(category_name: str = Body(..., embed=True)):
+    conn = get_db()
+    cur = conn.cursor(dictionary=True)
+    
+    try:
+        # Check if category already exists
+        cur.execute("SELECT category_id FROM category WHERE category_name=%s", (category_name,))
+        if cur.fetchone():
+            raise HTTPException(400, "Category with this name already exists")
+        
+        cur.execute("INSERT INTO category (category_name) VALUES (%s)", (category_name,))
+        conn.commit()
+        return {"message": "Category added successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(400, f"Failed to add category: {e}")
+
+# add an author
+@router.post("/authors")
+def add_author(author_name: str = Body(..., embed=True)):
+    conn = get_db()
+    cur = conn.cursor(dictionary=True)
+    
+    try:
+        # Check if author already exists
+        cur.execute("SELECT author_id FROM author WHERE author_name=%s", (author_name,))
+        if cur.fetchone():
+            raise HTTPException(400, "Author with this name already exists")
+        
+        cur.execute("INSERT INTO author (author_name) VALUES (%s)", (author_name,))
+        conn.commit()
+        return {"message": "Author added successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(400, f"Failed to add author: {e}")
 
 
 # update existing book
@@ -84,11 +151,36 @@ def update_book(isbn: str, book: BookUpdate):
 
     try:
         cur.execute(query, tuple(values))
+        if cur.rowcount == 0:
+            raise HTTPException(404, "Book not found")
         conn.commit()
+    except HTTPException:
+        raise
     except Exception as e:
+        print(f"Update error: {e}")
         raise HTTPException(400, f"Update failed: {e}")
 
     return {"message": "Book updated successfully"}
+
+# delete book
+@router.delete("/books/{isbn}")
+def delete_book(isbn: str):
+    conn = get_db()
+    cur = conn.cursor()
+
+    # Check if book exists
+    cur.execute("SELECT isbn FROM book WHERE isbn=%s", (isbn,))
+    if not cur.fetchone():
+        raise HTTPException(404, "Book not found")
+
+    try:
+        # Delete will cascade to book_author and other related tables
+        cur.execute("DELETE FROM book WHERE isbn=%s", (isbn,))
+        conn.commit()
+    except Exception as e:
+        raise HTTPException(400, f"Delete failed: {e}")
+
+    return {"message": "Book deleted successfully"}
 
 # view replenishment orders
 @router.get("/replenishment/")
@@ -134,23 +226,12 @@ def update_replenishment_status(
     if order["status"] != "pending":
         raise HTTPException(400, f"Cannot update order with status '{order['status']}'")
 
-    order_qty = order["quantity"]
-
-    # update status
+    # update status (the database trigger will automatically update book quantity when status='confirmed')
     cur.execute("""
         UPDATE replenishment_order
         SET status=%s, receive_date = CASE WHEN %s='confirmed' THEN CURDATE() ELSE receive_date END
         WHERE publisher_id=%s AND book_isbn=%s
     """, (status, status, publisher_id, book_isbn))
-
-
-    # adjust book quantity if confirmed
-    if status == "confirmed":
-        cur.execute("""
-            UPDATE book
-            SET quantity = quantity + %s
-            WHERE isbn=%s
-        """, (order_qty, book_isbn))
 
     conn.commit()
     return {"message": f"Replenishment order status updated to '{status}'"}
@@ -206,7 +287,52 @@ def update_order_status(
     conn.commit()
     return {"message": f"Order status updated to '{status}'"}
 
-
+# Get all orders for admin
+@router.get("/orders")
+def get_all_orders():
+    conn = get_db()
+    cur = conn.cursor(dictionary=True)
+    
+    cur.execute("""
+        SELECT o.order_id, o.customer_id, c.username, o.order_date, 
+               o.arrival_date, o.status,
+               oi.book_isbn, b.title, oi.quantity, oi.price,
+               (oi.quantity * oi.price) as item_total
+        FROM `order` o
+        JOIN customer c ON o.customer_id = c.customer_id
+        JOIN order_item oi ON o.order_id = oi.order_id
+        JOIN book b ON oi.book_isbn = b.isbn
+        ORDER BY o.order_date DESC, o.order_id
+    """)
+    
+    orders = cur.fetchall()
+    
+    # Group by order_id
+    grouped_orders = {}
+    for item in orders:
+        oid = item['order_id']
+        if oid not in grouped_orders:
+            grouped_orders[oid] = {
+                "order_id": oid,
+                "customer_id": item['customer_id'],
+                "username": item['username'],
+                "order_date": item['order_date'].strftime("%Y-%m-%d %H:%M:%S") if item['order_date'] else None,
+                "arrival_date": item['arrival_date'].strftime("%Y-%m-%d %H:%M:%S") if item['arrival_date'] else None,
+                "status": item['status'],
+                "items": [],
+                "total_price": 0
+            }
+        
+        grouped_orders[oid]["items"].append({
+            "isbn": item['book_isbn'],
+            "title": item['title'],
+            "quantity": item['quantity'],
+            "price": float(item['price']),
+            "item_total": float(item['item_total'])
+        })
+        grouped_orders[oid]["total_price"] += float(item['item_total'])
+    
+    return {"data": list(grouped_orders.values())}
 
 # -- reports --
 

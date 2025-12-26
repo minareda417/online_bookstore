@@ -50,7 +50,7 @@ const Viewbookdetails = () => {
 
     let confirm = prompt("write confirm");
     if (confirm === "confirm") {
-      const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}/deletebook`, { headers });
+      const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}/admin/books/${id}`);
       alert(response.data.message);
       navigate("/allbooks");
     }
@@ -90,7 +90,13 @@ const Viewbookdetails = () => {
             </div>
             <div className='p-4 w-full sm:w-3/6'>
               <h1 className='text-4xl text-zinc-300 font-semibold'>{data.title}</h1>
-              <p className='text-zinc-400 mt-1'>by {data.author}</p>
+              <p className='text-zinc-400 mt-1'>by {data.author || 'Unknown Author'}</p>
+              {data.publisher_name && (
+                <p className='text-zinc-400 mt-1'>Publisher: {data.publisher_name}</p>
+              )}
+              {data.publication_year && (
+                <p className='text-zinc-400 mt-1'>Published: {data.publication_year}</p>
+              )}
               <p className='flex mt-1 items-center justify-start text-zinc-400'><GrLanguage className='me-2' /> {data.category_name}</p>
               <p className='mt-4 text-zinc-100 text-3xl font-semibold'>Price : $ {data.selling_price} {" "}</p>
               <p className='mt-6 text-zinc-400 text-xl font-semibold'>Description</p>

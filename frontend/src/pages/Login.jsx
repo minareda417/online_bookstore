@@ -25,10 +25,11 @@ const Login = () => {
       }
       else {
         const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/auth/login`, Values);
-        // console.log(response.data);
+        console.log("Login response:", response.data);
         
         // Map "customer" to "user" for frontend consistency
         const role = response.data.role === "customer" ? "user" : response.data.role;
+        console.log("Mapped role:", role);
         
         dispatch(login())
         dispatch(changeRole(role))
