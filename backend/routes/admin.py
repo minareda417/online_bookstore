@@ -60,38 +60,122 @@ def update_book(isbn: str, book: BookUpdate):
 
     return {"message": "Book updated successfully"}
 
-
-# place replinshment ordar
-@router.post("/replenishment")
-def place_order(order: dict):
+# view replenishment orders
+@router.get("/replenishment/")
+def view_replenishment():
     conn = get_db()
-    cur = conn.cursor()
+    cur = conn.cursor(dictionary=True)
+
     try:
         cur.execute("""
-            INSERT INTO replenishment_order (publisher_id, book_isbn, send_date, quantity)
-            VALUES (%s, %s, CURDATE(), %s)
-        """, (order["publisher_id"], order["book_isbn"], order["quantity"]))
-        conn.commit()
+            SELECT *
+            FROM replenishment_order
+        """)
+        orders = cur.fetchall()
+        return {"replenishment_orders": orders}
+
     except Exception as e:
-        raise HTTPException(400, f"Failed to place order: {e}")
-    return {"message": "Order placed successfully"}
+        raise HTTPException(status_code=400, detail=f"Failed to load orders: {e}")
+    
+# set status from frontend dropdown list
+# update replenishment order status
+@router.put("/replenishment/update-status")
+def update_replenishment_status(
+    publisher_id: int,
+    book_isbn: str,
+    status: str = Query(..., description="New status: pending, confirmed, cancelled")
+):
+    allowed_status = {"pending", "confirmed", "cancelled"}
+    if status not in allowed_status:
+        raise HTTPException(400, "Invalid status value")
 
-
-# confirm order
-@router.put("/replenishment/{order_id}/confirm")
-def confirm_replenishment(order_id: int):
     conn = get_db()
-    cur = conn.cursor()
-    try:
+    cur = conn.cursor(dictionary=True)
+
+    # fetch current status and quantity
+    cur.execute("""
+        SELECT status, quantity FROM replenishment_order
+        WHERE publisher_id=%s AND book_isbn=%s
+    """, (publisher_id, book_isbn))
+    order = cur.fetchone()
+    if not order:
+        raise HTTPException(404, "Replenishment order not found")
+
+    if order["status"] != "pending":
+        raise HTTPException(400, f"Cannot update order with status '{order['status']}'")
+
+    order_qty = order["quantity"]
+
+    # update status
+    cur.execute("""
+        UPDATE replenishment_order
+        SET status=%s, receive_date = CASE WHEN %s='confirmed' THEN CURDATE() ELSE receive_date END
+        WHERE publisher_id=%s AND book_isbn=%s
+    """, (status, status, publisher_id, book_isbn))
+
+
+    # adjust book quantity if confirmed
+    if status == "confirmed":
         cur.execute("""
-            UPDATE replenishment_order
-            SET status='confirmed', receive_date=CURDATE()
-            WHERE order_id=%s
-        """, (order_id,))
-        conn.commit()
-    except Exception as e:
-        raise HTTPException(400, f"Failed to confirm order: {e}")
-    return {"message": "Order confirmed"}
+            UPDATE book
+            SET quantity = quantity + %s
+            WHERE isbn=%s
+        """, (order_qty, book_isbn))
+
+    conn.commit()
+    return {"message": f"Replenishment order status updated to '{status}'"}
+
+
+# update customer order status
+@router.put("/update-order-status")
+def update_order_status(
+    order_id: int,
+    status: str = Query(..., description="New status: pending, delivered, cancelled")
+):
+    allowed_status = {"pending", "delivered", "cancelled"}
+    if status not in allowed_status:
+        raise HTTPException(400, "Invalid status value")
+
+    conn = get_db()
+    cur = conn.cursor(dictionary=True)
+
+    # fetch current status and ordered items
+    cur.execute("""
+        SELECT status FROM `order`
+        WHERE order_id=%s
+    """, (order_id,))
+    order = cur.fetchone()
+    if not order:
+        raise HTTPException(404, "Order not found")
+
+    if order["status"] != "pending":
+        raise HTTPException(400, f"Cannot update order with status '{order['status']}'")
+
+    cur.execute("""
+        SELECT book_isbn, quantity FROM order_item
+        WHERE order_id=%s
+    """, (order_id,))
+    items = cur.fetchall()
+
+    # update status
+    cur.execute("""
+        UPDATE `order`
+        SET status=%s, arrival_date = CASE WHEN %s='delivered' THEN NOW() ELSE arrival_date END
+        WHERE order_id=%s
+    """, (status, status, order_id))
+
+    # if order cancelled, restore book quantities
+    if status == "cancelled":
+        for item in items:
+            cur.execute("""
+                UPDATE book
+                SET quantity = quantity + %s
+                WHERE isbn=%s
+            """, (item["quantity"], item["book_isbn"]))
+
+    conn.commit()
+    return {"message": f"Order status updated to '{status}'"}
+
 
 
 # -- reports --
@@ -107,15 +191,20 @@ def total_sales_last_month():
     last_day_last_month = first_day_this_month - timedelta(days=1)
     first_day_last_month = last_day_last_month.replace(day=1)
 
+    # convert to datetime to include full day range
+    start = datetime.combine(first_day_last_month, datetime.min.time())
+    end = datetime.combine(today, datetime.max.time())
+
     cur.execute("""
         SELECT SUM(oi.price * oi.quantity) AS total_sales
         FROM `order` o
         JOIN order_item oi ON o.order_id = oi.order_id
         WHERE o.order_date BETWEEN %s AND %s
-    """, (first_day_last_month, today))
+          AND o.status = 'delivered'
+    """, (start, end))
 
     result = cur.fetchone()
-    return {"total_sales_from_last_month_until_today": result["total_sales"] or 0}
+    return {"total_sales_from_last_month_until_today": float(result["total_sales"] or 0)}
 
 
 # total sales on a specific day
@@ -132,7 +221,7 @@ def total_sales_on_day(date_str: str = Query(..., description="Date in YYYY-MM-D
         SELECT SUM(oi.price * oi.quantity) AS total_sales
         FROM `order` o
         JOIN order_item oi ON o.order_id = oi.order_id
-        WHERE DATE(o.order_date) = %s
+        WHERE DATE(o.order_date) = %s and o.status = 'delivered'
     """, (target_date,))
     result = cur.fetchone()
     return {"total_sales_on_day": result["total_sales"] or 0}
@@ -150,7 +239,7 @@ def top_books():
         FROM book b
         JOIN order_item oi ON b.isbn = oi.book_isbn
         JOIN `order` o ON oi.order_id = o.order_id
-        WHERE o.order_date >= %s
+        WHERE o.order_date >= %s and o.status = 'delivered'
         GROUP BY b.isbn
         ORDER BY total_sold DESC
         LIMIT 10
@@ -171,7 +260,7 @@ def top_customers():
         FROM customer c
         JOIN `order` o ON c.customer_id = o.customer_id
         JOIN order_item oi ON o.order_id = oi.order_id
-        WHERE o.order_date >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH)
+        WHERE o.order_date >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH) and o.status = 'delivered'
         GROUP BY c.customer_id
         ORDER BY total_spent DESC
         LIMIT 5
