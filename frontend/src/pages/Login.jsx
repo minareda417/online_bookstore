@@ -57,7 +57,7 @@ const Login = () => {
 
           <div className='mt-4'>
             <label htmlFor="password" className='text-zinc-400'>Password</label>
-            <input type="text" name='password' placeholder='enter passsword' className='w-full mt-2 bg-zinc-900 text-zinc-100 p-2 outline-none' required value={Values.password} onChange={change} />
+            <input type="password" name='password' placeholder='enter passsword' className='w-full mt-2 bg-zinc-900 text-zinc-100 p-2 outline-none' required value={Values.password} onChange={change} />
           </div>
 
           <div className='mt-4'>

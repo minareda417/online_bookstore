@@ -21,11 +21,21 @@ const Navbar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('id');
-    localStorage.removeItem('role');
-    dispatch(logout());
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      const customerId = localStorage.getItem('id');
+      if (customerId) {
+        await axios.post(`${process.env.REACT_APP_BASE_URL}/customer/logout/${customerId}`);
+      }
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      localStorage.removeItem('id');
+      localStorage.removeItem('role');
+      dispatch(logout());
+      dispatch(cartCount(0));
+      navigate('/');
+    }
   };
 
   const headers = {

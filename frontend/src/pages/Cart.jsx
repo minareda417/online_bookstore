@@ -10,6 +10,8 @@ const Cart = () => {
   const [cart, setCart] = useState();
   const [total, setTotal] = useState(0);
   const [cardNumber, setCardNumber] = useState("");
+  const [creditCards, setCreditCards] = useState([]);
+  const [selectedCard, setSelectedCard] = useState("");
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const customerId = localStorage.getItem("id");
@@ -33,8 +35,25 @@ const Cart = () => {
     }
   }
 
+  const fetchCreditCards = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_BASE_URL}/customer/credit-cards/${customerId}`
+      );
+      setCreditCards(response.data.data);
+      // Auto-select first card if available
+      if (response.data.data.length > 0) {
+        setSelectedCard(response.data.data[0].card_number);
+      }
+    } catch (error) {
+      console.error("Error fetching credit cards:", error);
+      setCreditCards([]);
+    }
+  }
+
   useEffect(() => {
     fetchCart();
+    fetchCreditCards();
   }, []);
 
   const removeCart = async (bookIsbn) => {
@@ -86,14 +105,19 @@ const Cart = () => {
   }, [cart])
 
   const placeOrder = async () => {
-    if (!cardNumber) {
-      alert("Please enter your credit card number");
+    if (!selectedCard) {
+      alert("Please select a credit card");
+      return;
+    }
+
+    if (creditCards.length === 0) {
+      alert("Please add a credit card in Settings before placing an order");
       return;
     }
 
     try {
       const response = await axios.post(
-        `${process.env.REACT_APP_BASE_URL}/customer/checkout/${customerId}?card_number=${cardNumber}`,
+        `${process.env.REACT_APP_BASE_URL}/customer/checkout/${customerId}?card_number=${selectedCard}`,
         {},
         { headers }
       );
@@ -174,24 +198,56 @@ const Cart = () => {
               </div>
               
               <div className='my-4'>
-                <label htmlFor='cardNumber' className='text-zinc-400 text-sm block mb-2'>
-                  Credit Card Number
+                <label className='text-zinc-400 text-sm block mb-2'>
+                  Select Payment Method
                 </label>
-                <input
-                  type='text'
-                  id='cardNumber'
-                  placeholder='Enter card number'
-                  value={cardNumber}
-                  onChange={(e) => setCardNumber(e.target.value)}
-                  className='w-full bg-zinc-900 text-white px-3 py-2 rounded border border-zinc-700 focus:border-zinc-500 outline-none'
-                  maxLength='16'
-                />
+                
+                {creditCards.length === 0 ? (
+                  <div className='bg-zinc-900 text-zinc-400 px-3 py-3 rounded border border-zinc-700'>
+                    <p className='text-sm'>No credit cards available.</p>
+                    <button 
+                      onClick={() => navigate('/profile/setting')}
+                      className='text-blue-400 hover:text-blue-300 text-sm mt-2 underline'
+                    >
+                      Add a card in Settings
+                    </button>
+                  </div>
+                ) : (
+                  <div className='space-y-2'>
+                    {creditCards.map((card, index) => (
+                      <label 
+                        key={index}
+                        className={`flex items-center justify-between bg-zinc-900 px-3 py-3 rounded border cursor-pointer transition-colors ${
+                          selectedCard === card.card_number 
+                            ? 'border-blue-500 bg-zinc-800' 
+                            : 'border-zinc-700 hover:border-zinc-600'
+                        }`}
+                      >
+                        <div className='flex items-center gap-3'>
+                          <input
+                            type='radio'
+                            name='creditCard'
+                            value={card.card_number}
+                            checked={selectedCard === card.card_number}
+                            onChange={(e) => setSelectedCard(e.target.value)}
+                            className='w-4 h-4'
+                          />
+                          <div>
+                            <p className='text-white font-mono text-sm'>{card.masked_number}</p>
+                            <p className='text-zinc-500 text-xs'>Expires: {card.expiry_date}</p>
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
               
               <div className='flex justify-center mt-4'>
                 <button 
-                  className='bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 sm:px-8 sm:py-3 rounded font-semibold transition-colors'
+                  className='bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 sm:px-8 sm:py-3 rounded font-semibold transition-colors disabled:bg-zinc-700 disabled:cursor-not-allowed'
                   onClick={placeOrder}
+                  disabled={creditCards.length === 0}
                 >
                   Place Order
                 </button>

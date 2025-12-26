@@ -260,34 +260,41 @@ def order_history(customer_id: int):
     
     cur.execute("""
         SELECT o.order_id, o.order_date, o.arrival_date, o.status,
-               oi.book_isbn, b.title, b.description, oi.quantity, oi.price
+               oi.book_isbn, b.title, b.description, oi.quantity, oi.price,
+               (oi.quantity * oi.price) as item_total
         FROM `order` o
         JOIN order_item oi ON o.order_id = oi.order_id
         JOIN book b ON oi.book_isbn = b.isbn
         WHERE o.customer_id=%s
-        ORDER BY o.order_date DESC
+        ORDER BY o.order_date DESC, o.order_id
     """, (customer_id,))
     
     orders = cur.fetchall()
     
-    # Format for frontend - flatten to individual items
-    result = []
+    # Group by order_id and calculate total
+    grouped_orders = {}
     for item in orders:
-        result.append({
-            "order_id": item['order_id'],
-            "order_date": item['order_date'],
-            "arrival_date": item['arrival_date'],
-            "status": item['status'],
-            "book": {
-                "isbn": item['book_isbn'],
-                "title": item['title'],
-                "desc": item['description'] or "",
-                "price": float(item['price'])
-            },
-            "quantity": item['quantity']
+        oid = item['order_id']
+        if oid not in grouped_orders:
+            grouped_orders[oid] = {
+                "order_id": oid,
+                "order_date": item['order_date'].strftime("%Y-%m-%d %H:%M:%S") if item['order_date'] else None,
+                "arrival_date": item['arrival_date'].strftime("%Y-%m-%d %H:%M:%S") if item['arrival_date'] else None,
+                "status": item['status'],
+                "items": [],
+                "total_price": 0
+            }
+        
+        grouped_orders[oid]["items"].append({
+            "isbn": item['book_isbn'],
+            "title": item['title'],
+            "quantity": item['quantity'],
+            "price": float(item['price']),
+            "item_total": float(item['item_total'])
         })
+        grouped_orders[oid]["total_price"] += float(item['item_total'])
     
-    return {"data": result}
+    return {"data": list(grouped_orders.values())}
 
 
 @router.put("/update-data")
