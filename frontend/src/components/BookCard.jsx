@@ -7,7 +7,7 @@ const BookCard = (props) => {
   const headers = {
     id: localStorage.getItem("id"),
     authorization: `Bearer ${localStorage.getItem("token")}`,
-    bookid: props.data._id
+    bookid: props.data.isbn
   }
   const removeFav = async () => {
     const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/removefav`, {}, { headers });
@@ -17,14 +17,14 @@ const BookCard = (props) => {
   }
   return (
     <div className='bg-zinc-800 rounded p-1 flex flex-col'>
-      <Link to={`/getdetails/${props.data._id}`}>
+      <Link to={`/getdetails/${props.data.isbn}`}>
         <div className=''>
           <div className='bg-zinc-900 rounded flex items-center justify-center'>
-            <img src={props.data.url} alt="" className='h-[15vh] sm:h-[25vh] rounded m-1' />
+            <img src={props.data.cover_photo} alt="" className='h-[15vh] sm:h-[25vh] rounded m-1' />
           </div>
           <h2 className='mt-4 text-lg lg:text-xl  text-zinc-200 font-semibold'>{props.data.title}</h2>
           <p className='text-zinc-400 font-semibold text-sm lg:text-lg'>{props.data.author}</p>
-          <p className='text-zinc-200 font-semibold'>₹ {props.data.price}</p>
+          <p className='text-zinc-200 font-semibold'>₹ {props.data.selling_price}</p>
         </div>
       </Link>
       {

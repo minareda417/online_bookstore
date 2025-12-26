@@ -27,7 +27,7 @@ const Signup = () => {
 
       }
       else {
-        const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/signup`, Values);
+        const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/register`, Values);
         console.log(response.data);
         alert("Signup Successfull Please Login!!!")
         navigate('/login');

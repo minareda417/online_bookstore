@@ -20,30 +20,29 @@ const Login = () => {
   const submit = async () => {
     try {
       if (Values.username === "" || Values.password === "") {
-        alert("all fiels are required");
+        alert("all fields are required");
 
       }
       else {
-        const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/signin`, Values);
+        const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/auth/login`, Values);
         // console.log(response.data);
-        alert(response.data.message);
-        navigate('/');
-
+        
+        // Map "customer" to "user" for frontend consistency
+        const role = response.data.role === "customer" ? "user" : response.data.role;
+        
         dispatch(login())
-        dispatch(changeRole(response.data.role))
+        dispatch(changeRole(role))
 
+        //pass data into localstorage(storage)
+        localStorage.setItem("id", response.data.user_id);
+        localStorage.setItem("role", role);
 
-
-
-
-        //pass token into localstorage(storage)
-        localStorage.setItem("id", response.data.id);
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("role", response.data.role);
+        alert("Login successful");
+        navigate('/');
 
       }
     } catch (error) {
-      alert(error.response.data.message);
+      alert(error.response?.data?.detail || "Login failed");
     }
   }
   return (
