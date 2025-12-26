@@ -8,7 +8,8 @@ const Signup = () => {
     username: "",
     email: "",
     password: "",
-    address: "", 
+    shipping_address: "", 
+    phone_number: "",
     first_name: "",
     last_name: "",
   });
@@ -22,12 +23,12 @@ const Signup = () => {
   //onsubmit par call kiya h 
   const submit = async () => {
     try {
-      if (Values.username === "" || Values.email === "" || Values.password === "" || Values.address === "" || Values.first_name === "" || Values.last_name === "") {
-        alert("all fiels are required");
+      if (Values.username === "" || Values.email === "" || Values.password === "" || Values.first_name === "" || Values.last_name === "") {
+        alert("all fields are required");
 
       }
       else {
-        const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/register`, Values);
+        const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/auth/register`, Values);
         console.log(response.data);
         alert("Signup Successfull Please Login!!!")
         navigate('/login');
@@ -35,7 +36,8 @@ const Signup = () => {
       }
     } catch (error) {
       console.log(error);
-      alert(error.response.data.message);
+      const errorMessage = error.response?.data?.detail || error.response?.data?.message || error.message || "Registration failed";
+      alert(errorMessage);
 
     }
   }
@@ -57,8 +59,12 @@ const Signup = () => {
             <input type="text" name='password' placeholder='enter passsword' className='w-full mt-2 bg-zinc-900 text-zinc-100 p-2 outline-none' required value={Values.password} onChange={change} />
           </div>
           <div className='mt-4'>
-            <label htmlFor="adddress" className='text-zinc-400'>Address</label>
-            <textarea id="address" name='address' placeholder='address' className='w-full mt-2 bg-zinc-900 text-zinc-100 p-2 outline-none' required value={Values.address} onChange={change}></textarea>
+            <label htmlFor="shipping_address" className='text-zinc-400'>Shipping Address</label>
+            <textarea id="shipping_address" name='shipping_address' placeholder='shipping address' className='w-full mt-2 bg-zinc-900 text-zinc-100 p-2 outline-none' value={Values.shipping_address} onChange={change}></textarea>
+          </div>
+          <div className='mt-4'>
+            <label htmlFor="phone_number" className='text-zinc-400'>Phone Number</label>
+            <input type="text" name='phone_number' placeholder='phone number (optional)' className='w-full mt-2 bg-zinc-900 text-zinc-100 p-2 outline-none' value={Values.phone_number} onChange={change} />
           </div>
           <div className='mt-4'>
             <label htmlFor="first name" className='text-zinc-400'>first_name</label>

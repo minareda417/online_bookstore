@@ -13,7 +13,7 @@ const Favourites = () => {
   }
 
   const fetch = async () => {
-    const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/getfavbooks`, { headers });
+    const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/customer/getfavbooks`, { headers });
     setFav(response.data.data);
     // console.log(response.data.data);
   };

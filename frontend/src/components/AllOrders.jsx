@@ -18,7 +18,7 @@ const AllOrders = () => {
     }
 
     const fetch = async () => {
-        const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/allorders`, { headers });
+        const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/customer/history/allorders`, { headers });
         // console.log(response.data.data);
         setallorder(response.data.data);
     };

@@ -1,10 +1,41 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Header
 from db import get_db
 from schemas import CartItemCreate, CustomerUpdate,CreditCardCreate
 from datetime import date,datetime
 import hashlib
+import os
 
 router = APIRouter(prefix="/customer", tags=["Customer"])
+
+# get customer info
+@router.get("/getuserinfo")
+def get_user_info(customer_id: int = Query(..., alias="id")):
+    conn = get_db()
+    cur = conn.cursor(dictionary=True)
+    
+    try:
+        cur.execute("""
+            SELECT customer_id, username, email, phone_number, 
+                   first_name, last_name, shipping_address
+            FROM customer
+            WHERE customer_id = %s
+        """, (customer_id,))
+        
+        customer = cur.fetchone()
+        if not customer:
+            raise HTTPException(404, "Customer not found")
+        
+        # Add a default avatar
+        customer['avatar'] = 'https://cdn-icons-png.flaticon.com/128/3177/3177440.png'
+        
+        return {"data": customer}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Error fetching customer info: {str(e)}")
+    finally:
+        cur.close()
+        conn.close()
 
 @router.post("/add-credit-card/{customer_id}")
 def add_credit_card(customer_id: int, card: CreditCardCreate):
@@ -34,7 +65,7 @@ def add_credit_card(customer_id: int, card: CreditCardCreate):
     return {"message": "Credit card added successfully"}
 
 # add book to cart
-@router.post("/cart")
+@router.post("/addtocart")
 def add_to_cart(cart_item: CartItemCreate):
     conn = get_db()
     cur = conn.cursor()
@@ -82,14 +113,43 @@ def add_to_cart(cart_item: CartItemCreate):
     return {"message": "Book added to cart"}
 
 
+# update cart quantity
+@router.put("/update-cart-quantity")
+def update_cart_quantity(customer_id: int, book_isbn: str, quantity: int):
+    conn = get_db()
+    cur = conn.cursor()
+
+    if quantity < 1:
+        raise HTTPException(400, "Quantity must be at least 1")
+
+    # Check available stock
+    cur.execute("SELECT quantity FROM book WHERE isbn = %s", (book_isbn,))
+    book = cur.fetchone()
+
+    if not book:
+        raise HTTPException(404, "Book not found")
+
+    if quantity > book[0]:
+        raise HTTPException(400, f"Only {book[0]} items available")
+
+    # Update cart quantity
+    cur.execute(
+        "UPDATE cart SET quantity=%s WHERE customer_id=%s AND book_isbn=%s",
+        (quantity, customer_id, book_isbn)
+    )
+    
+    conn.commit()
+    return {"message": "Cart quantity updated"}
+
+
 # view cart
-@router.get("/cart/{customer_id}")
+@router.get("/view-cart")
 def view_cart(customer_id: int):
     conn = get_db()
     cur = conn.cursor(dictionary=True)
 
     cur.execute("""
-        SELECT b.title, c.quantity, b.selling_price,
+        SELECT b.isbn, b.title, c.quantity, b.selling_price,
                c.quantity * b.selling_price AS total_price
         FROM cart c
         JOIN book b ON c.book_isbn = b.isbn
@@ -100,7 +160,7 @@ def view_cart(customer_id: int):
 
 
 # delete item from cart
-@router.delete("/cart/{customer_id}/{book_isbn}")
+@router.delete("/remove-from-cart")
 def remove_from_cart(customer_id: int, book_isbn: str):
     conn = get_db()
     cur = conn.cursor()
@@ -165,14 +225,14 @@ def checkout(customer_id: int, card_number: str):
 
 
 # view past orders
-@router.get("/history/{customer_id}")
+@router.get("/history")
 def order_history(customer_id: int):
     conn = get_db()
     cur = conn.cursor(dictionary=True)
     
     cur.execute("""
         SELECT o.order_id, o.order_date, o.arrival_date, o.status,
-               oi.book_isbn, b.title, oi.quantity, oi.price
+               oi.book_isbn, b.title, b.description, oi.quantity, oi.price
         FROM `order` o
         JOIN order_item oi ON o.order_id = oi.order_id
         JOIN book b ON oi.book_isbn = b.isbn
@@ -182,29 +242,27 @@ def order_history(customer_id: int):
     
     orders = cur.fetchall()
     
-    # group by order_id
-    grouped_orders = {}
+    # Format for frontend - flatten to individual items
+    result = []
     for item in orders:
-        oid = item['order_id']
-        if oid not in grouped_orders:
-            grouped_orders[oid] = {
-                "order_id": oid,
-                "order_date": item['order_date'],
-                "arrival_date": item['arrival_date'],
-                "status": item['status'],
-                "items": []
-            }
-        grouped_orders[oid]["items"].append({
-            "book_isbn": item['book_isbn'],
-            "title": item['title'],
-            "quantity": item['quantity'],
-            "price": item['price']
+        result.append({
+            "order_id": item['order_id'],
+            "order_date": item['order_date'],
+            "arrival_date": item['arrival_date'],
+            "status": item['status'],
+            "book": {
+                "isbn": item['book_isbn'],
+                "title": item['title'],
+                "desc": item['description'] or "",
+                "price": float(item['price'])
+            },
+            "quantity": item['quantity']
         })
     
-    return list(grouped_orders.values())
+    return {"data": result}
 
 
-@router.put("update-data/{customer_id}")
+@router.put("/update-data")
 def update_customer_data(customer_id: int, update: CustomerUpdate):
     conn = get_db()
     cur = conn.cursor(dictionary=True)
@@ -271,4 +329,3 @@ def logout(customer_id: int):
     conn.commit()
     
     return {"message": "Customer logged out and cart cleared successfully"}
-

@@ -8,7 +8,7 @@ const Recently = () => {
   useEffect(() => {
     const fetch = async () => {
 const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/books/`)
-      setData(response.data.slice(0, 4)); // Get only one book
+      setData(response.data.slice(0, 8)); // Get only one book
     }
     fetch();
   }, [])

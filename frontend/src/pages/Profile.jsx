@@ -15,8 +15,9 @@ const Profile = () => {
 
   useEffect(() => {
     const fetch = async () => {
-      const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/getuserinfo`, { headers })
-      setProfile(response.data);
+      const customerId = localStorage.getItem("id");
+      const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/customer/getuserinfo?id=${customerId}`)
+      setProfile(response.data.data);
       // console.log(response.data);
     }
     fetch()

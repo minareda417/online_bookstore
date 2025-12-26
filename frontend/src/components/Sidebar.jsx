@@ -26,8 +26,6 @@ const Sidebar = (props) => {
         </div>
         <div className='hidden sm:flex flex-row sm:flex-col items-center w-full'>
           {role === "user" &&
-            (<Link index to="/profile" className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Favourites</Link>)}
-          {role === "user" &&
             (<Link to="/profile/orderhistory" className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Order History</Link>)}
           {role === "admin" &&
             (<Link index to="/profile" className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>All Orders</Link>)}
@@ -39,8 +37,6 @@ const Sidebar = (props) => {
       </div>
       {/* responsive sidebar */}
       <div className='flex sm:hidden  flex-row sm:flex-col items-center w-full'>
-        {role === "user" &&
-          (<Link index to="/profile" className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Favourites</Link>)}
         {role === "user" &&
           (<Link to="/profile/orderhistory" className='text-zinc-100 hover:font-semibold w-full py-2   text-center transition-all p-1 hover:tracking-wider'>Order History</Link>)}
         {role === "admin" &&

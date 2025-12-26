@@ -78,7 +78,6 @@ CREATE TABLE
         `password` VARCHAR(64) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
         phone_number VARCHAR(15),
-        `address` VARCHAR(255),
         shipping_address VARCHAR(255)
     );
 

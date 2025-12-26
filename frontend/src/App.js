@@ -24,7 +24,7 @@ const App = () => {
   const dispatch = useDispatch();
   useEffect(() => {
 
-    if (localStorage.getItem("id") && localStorage.getItem("token") && localStorage.getItem("role")) {
+    if (localStorage.getItem("id") && localStorage.getItem("role")) {
       dispatch(login());
       dispatch(changeRole(localStorage.getItem("role")));
     }
@@ -41,7 +41,7 @@ const App = () => {
         <Route path='/cart' element={<Cart />}></Route>
         <Route path='/profile' element={<Profile />}>
 
-          {(role === "user") ? (<Route index element={<Favourites />}></Route>) : (<Route index element={<AllOrders />}></Route>)}
+          {(role === "user") ? (<Route index element={<OrderHistory />}></Route>) : (<Route index element={<AllOrders />}></Route>)}
           {(role === "user") ? (<Route path='/profile/orderhistory' element={<OrderHistory />} />) : (<Route path='/profile/addbooks' element={<AddBook />} />)}
 
           {(role === "user") ? (<Route path='/profile/orderhistory' element={<OrderHistory />} />) : (<Route path='/profile/addpublishers' element={<AddPublisher />} />)}

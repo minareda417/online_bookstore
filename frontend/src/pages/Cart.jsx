@@ -22,19 +22,11 @@ const Cart = () => {
   const fetchCart = async () => {
     try {
       const response = await axios.get(
-        `${process.env.REACT_APP_BASE_URL}/customer/cart/${customerId}`,
+        `${process.env.REACT_APP_BASE_URL}/customer/view-cart?customer_id=${customerId}`,
         { headers }
       );
       
-      // Transform backend data to match frontend format
-      const formattedCart = response.data.map(item => ({
-        title: item.title,
-        quantity: item.quantity,
-        unit_price: item.price,
-        price: item.total_price,
-      }));
-      
-      setCart(formattedCart);
+      setCart(response.data);
     } catch (error) {
       console.error("Error fetching cart:", error);
       setCart([]);
@@ -48,7 +40,7 @@ const Cart = () => {
   const removeCart = async (bookIsbn) => {
     try {
       const response = await axios.delete(
-        `${process.env.REACT_APP_BASE_URL}/customer/cart/${customerId}/${bookIsbn}`,
+        `${process.env.REACT_APP_BASE_URL}/customer/remove-from-cart?customer_id=${customerId}&book_isbn=${bookIsbn}`,
         { headers }
       );
       
@@ -57,7 +49,7 @@ const Cart = () => {
       
       // Update cart count in Redux
       const updatedCart = await axios.get(
-        `${process.env.REACT_APP_BASE_URL}/customer/cart/${customerId}`,
+        `${process.env.REACT_APP_BASE_URL}/customer/view-cart?customer_id=${customerId}`,
         { headers }
       );
       dispatch(cartCount(updatedCart.data.length));
@@ -67,11 +59,27 @@ const Cart = () => {
     }
   }
 
+  const updateQuantity = async (bookIsbn, newQuantity) => {
+    if (newQuantity < 1) return;
+    
+    try {
+      await axios.put(
+        `${process.env.REACT_APP_BASE_URL}/customer/update-cart-quantity?customer_id=${customerId}&book_isbn=${bookIsbn}&quantity=${newQuantity}`,
+        {},
+        { headers }
+      );
+      fetchCart(); // Refresh cart
+    } catch (error) {
+      console.error("Error updating quantity:", error);
+      alert(error.response?.data?.detail || "Failed to update quantity");
+    }
+  }
+
   useEffect(() => {
     if (cart && cart.length > 0) {
       let Total = 0;
       cart.forEach((item) => {
-        Total += item.price;
+        Total += item.total_price;
       });
       setTotal(Total);
     }
@@ -123,17 +131,31 @@ const Cart = () => {
               </div>
               <div className='flex flex-col items-start w-4/6'>
                 <p className='font-semibold text-md sm:text-xl'>{item.title}</p>
-                <p className='text-zinc-400 text-xs sm:text-sm mt-1'>
-                  Quantity: {item.quantity}
-                </p>
+                <div className='flex items-center gap-2 mt-2'>
+                  <button 
+                    onClick={() => updateQuantity(item.isbn, item.quantity - 1)}
+                    className='bg-zinc-700 hover:bg-zinc-600 text-white px-2 py-1 rounded text-sm'
+                  >
+                    -
+                  </button>
+                  <p className='text-zinc-400 text-xs sm:text-sm'>
+                    Quantity: {item.quantity}
+                  </p>
+                  <button 
+                    onClick={() => updateQuantity(item.isbn, item.quantity + 1)}
+                    className='bg-zinc-700 hover:bg-zinc-600 text-white px-2 py-1 rounded text-sm'
+                  >
+                    +
+                  </button>
+                </div>
               </div>
               <div className='flex w-1/6 justify-around text-xs sm:text-lg items-center'>
-                <p>₹ {item.price.toFixed(2)}</p>
+                <p>$ {item.selling_price ? item.selling_price.toFixed(2) : '0.00'}</p>
               </div>
               <div className='flex w-1/6 justify-around text-xs sm:text-lg items-center'>
-                <p>₹ {item.total_price.toFixed(2)}</p>
+                <p>$ {item.total_price ? item.total_price.toFixed(2) : '0.00'}</p>
                 <button 
-                  onClick={() => removeCart(item._id)} 
+                  onClick={() => removeCart(item.isbn)} 
                   className='sm:text-2xl text-red-500 hover:text-red-700'
                 >
                   <MdDelete />
@@ -148,7 +170,7 @@ const Cart = () => {
               
               <div className='flex justify-between my-2 text-zinc-300'>
                 <p>{cart.length} book{cart.length > 1 ? 's' : ''}</p>
-                <p>₹ {total.toFixed(2)}</p>
+                <p>$ {total.toFixed(2)}</p>
               </div>
               
               <div className='my-4'>
