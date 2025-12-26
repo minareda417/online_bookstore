@@ -8,7 +8,9 @@ const Signup = () => {
     username: "",
     email: "",
     password: "",
-    address: ""
+    address: "", 
+    first_name: "",
+    last_name: "",
   });
   const navigate = useNavigate();
 
@@ -20,7 +22,7 @@ const Signup = () => {
   //onsubmit par call kiya h 
   const submit = async () => {
     try {
-      if (Values.username === "" || Values.email === "" || Values.password === "" || Values.address === "") {
+      if (Values.username === "" || Values.email === "" || Values.password === "" || Values.address === "" || Values.first_name === "" || Values.last_name === "") {
         alert("all fiels are required");
 
       }
@@ -57,6 +59,14 @@ const Signup = () => {
           <div className='mt-4'>
             <label htmlFor="adddress" className='text-zinc-400'>Address</label>
             <textarea id="address" name='address' placeholder='address' className='w-full mt-2 bg-zinc-900 text-zinc-100 p-2 outline-none' required value={Values.address} onChange={change}></textarea>
+          </div>
+          <div className='mt-4'>
+            <label htmlFor="first name" className='text-zinc-400'>first_name</label>
+            <textarea id="text" name='first_name' placeholder='first_name' className='w-full mt-2 bg-zinc-900 text-zinc-100 p-2 outline-none' required value={Values.first_name} onChange={change}></textarea>
+          </div>
+          <div className='mt-4'>
+            <label htmlFor="last name" className='text-zinc-400'>last_name</label>
+            <textarea id="text" name='last_name' placeholder='last_name' className='w-full mt-2 bg-zinc-900 text-zinc-100 p-2 outline-none' required value={Values.last_name} onChange={change}></textarea>
           </div>
           <div className='mt-4'>
             <button className='w-full bg-blue-500 text-white font-semibold py-2 rounded hover:bg-blue-600' onClick={submit}>

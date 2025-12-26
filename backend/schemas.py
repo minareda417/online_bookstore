@@ -52,6 +52,19 @@ class BookUpdate(BaseModel):
     selling_price: Optional[float]
     quantity: Optional[int]
 
+
+class BookDetails(BaseModel):
+    isbn: str
+    title: str
+    publisher_name: Optional[str]
+    publication_year: Optional[int]
+    selling_price: float
+    category_name: Optional[str]
+    description: Optional[str]
+    quantity: int
+    cover_photo: Optional[str]
+
+
 # cart
 class CartItemCreate(BaseModel):
     customer_id: int
