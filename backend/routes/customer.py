@@ -38,20 +38,45 @@ def add_credit_card(customer_id: int, card: CreditCardCreate):
 def add_to_cart(cart_item: CartItemCreate):
     conn = get_db()
     cur = conn.cursor()
-    
-    # check if item exists
-    cur.execute("SELECT quantity FROM cart WHERE customer_id=%s AND book_isbn=%s",
-                (cart_item.customer_id, cart_item.book_isbn))
+
+    # get available stock
+    cur.execute(
+        "SELECT quantity FROM book WHERE isbn = %s",
+        (cart_item.book_isbn,)
+    )
+    book = cur.fetchone()
+
+    if not book:
+        raise HTTPException(404, "Book not found")
+
+    available_stock = book[0]
+
+    # check existing cart quantity
+    cur.execute(
+        "SELECT quantity FROM cart WHERE customer_id=%s AND book_isbn=%s",
+        (cart_item.customer_id, cart_item.book_isbn)
+    )
     existing = cur.fetchone()
-    
+
+    current_qty = existing[0] if existing else 0
+    requested_total = current_qty + cart_item.quantity
+
+    if requested_total > available_stock:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Only {available_stock} items available"
+        )
+
     if existing:
-        # update quantity
-        new_qty = existing[0] + cart_item.quantity
-        cur.execute("UPDATE cart SET quantity=%s WHERE customer_id=%s AND book_isbn=%s",
-                    (new_qty, cart_item.customer_id, cart_item.book_isbn))
+        cur.execute(
+            "UPDATE cart SET quantity=%s WHERE customer_id=%s AND book_isbn=%s",
+            (requested_total, cart_item.customer_id, cart_item.book_isbn)
+        )
     else:
-        cur.execute("INSERT INTO cart (customer_id, book_isbn, quantity) VALUES (%s,%s,%s)",
-                    (cart_item.customer_id, cart_item.book_isbn, cart_item.quantity))
+        cur.execute(
+            "INSERT INTO cart (customer_id, book_isbn, quantity) VALUES (%s,%s,%s)",
+            (cart_item.customer_id, cart_item.book_isbn, cart_item.quantity)
+        )
 
     conn.commit()
     return {"message": "Book added to cart"}
