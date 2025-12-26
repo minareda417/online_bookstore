@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query
 from db import get_db
-from schemas import BookCreate, BookUpdate
+from schemas import BookCreate, BookUpdate,PublisherCreate
 from datetime import date, timedelta, datetime
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -32,6 +32,32 @@ def add_book(book: BookCreate):
         raise HTTPException(400, f"Failed to add book: {e}")
 
     return {"message": "Book added successfully"}
+
+# add a publisher
+@router.post("/publishers")
+def add_publisher(publisher: PublisherCreate):
+    conn = get_db()
+    cur = conn.cursor(dictionary=True)
+    
+    try:
+        # insert publisher
+        cur.execute("""
+            INSERT INTO publisher (publisher_id, publisher_name, address)
+            VALUES (%s, %s, %s)
+        """, (publisher.publisher_id, publisher.publisher_name, publisher.address))
+        
+        # insert phone numbers
+        for phone in publisher.phone_numbers:
+            cur.execute("""
+                INSERT INTO publisher_phone (publisher_id, phone_number)
+                VALUES (%s, %s)
+            """, (publisher.publisher_id, phone))
+        
+        conn.commit()
+    except Exception as e:
+        raise HTTPException(400, f"Failed to add publisher: {e}")
+    
+    return {"message": "Publisher added successfully"}
 
 
 # update existing book
