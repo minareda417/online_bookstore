@@ -64,6 +64,34 @@ def add_credit_card(customer_id: int, card: CreditCardCreate):
     
     return {"message": "Credit card added successfully"}
 
+# get customer credit cards
+@router.get("/credit-cards/{customer_id}")
+def get_credit_cards(customer_id: int):
+    conn = get_db()
+    cur = conn.cursor(dictionary=True)
+    
+    try:
+        cur.execute("""
+            SELECT card_number, expiration_date
+            FROM credit_card
+            WHERE customer_id = %s
+        """, (customer_id,))
+        
+        cards = cur.fetchall()
+        
+        # Mask card numbers for security (show only last 4 digits)
+        for card in cards:
+            card['masked_number'] = '**** **** **** ' + card['card_number'][-4:]
+            card['expiry_date'] = card['expiration_date'].strftime("%m/%y")
+            del card['expiration_date']
+        
+        return {"data": cards}
+    except Exception as e:
+        raise HTTPException(500, f"Error fetching credit cards: {str(e)}")
+    finally:
+        cur.close()
+        conn.close()
+
 # add book to cart
 @router.post("/addtocart")
 def add_to_cart(cart_item: CartItemCreate):
