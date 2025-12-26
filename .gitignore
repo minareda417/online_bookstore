@@ -253,3 +253,5 @@ book_covers
 selected_books.csv
 insert_books_ordered.sql
 insert_tosql.py
+
+*.pdf
