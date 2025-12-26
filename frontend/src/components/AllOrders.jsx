@@ -18,13 +18,22 @@ const AllOrders = () => {
     }
 
     const fetch = async () => {
-        const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/customer/history/allorders`, { headers });
-        // console.log(response.data.data);
-        setallorder(response.data.data);
+        try {
+            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/customer/history/allorders`, { headers });
+            // console.log(response.data.data);
+            setallorder(response.data.data);
+        } catch (error) {
+            console.error("Error fetching orders:", error);
+            setallorder([]);
+        }
     };
 
     useEffect(() => {
-        fetch();
+        const adminId = localStorage.getItem("id");
+        const role = localStorage.getItem("role");
+        if (adminId && role === "admin") {
+            fetch();
+        }
     }, [])
     return (
         <div className=''>

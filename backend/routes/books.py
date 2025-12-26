@@ -24,7 +24,15 @@ def search_books(q: str):
             p.publisher_name LIKE %s
     """, (f"%{q}%", q, f"%{q}%", f"%{q}%"))
 
-    return cur.fetchall()
+    books = cur.fetchall()
+    
+    # Convert local file paths to URLs
+    for book in books:
+        if book['cover_photo']:
+            filename = os.path.basename(book['cover_photo'])
+            book['cover_photo'] = f"http://localhost:8000/covers/{filename}"
+    
+    return books
 
 @router.get("/{isbn}")
 def get_book_details(isbn: str) -> BookDetails:

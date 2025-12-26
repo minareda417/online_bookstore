@@ -3,17 +3,29 @@ import { FaArrowRightFromBracket } from 'react-icons/fa6'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
 import { changeRole, logout } from '../store/auth'
+import { cartCount } from '../store/cart'
+import axios from 'axios'
 const Sidebar = (props) => {
   const role = useSelector((state) => (state.auth.role));
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const logoutbtn = () => {
-    dispatch(logout());
-    dispatch(changeRole());
-    localStorage.clear("id")
-    localStorage.clear("token")
-    localStorage.clear("role")
-    navigate("/")
+  const logoutbtn = async () => {
+    try {
+      const customerId = localStorage.getItem('id');
+      if (customerId) {
+        await axios.post(`${process.env.REACT_APP_BASE_URL}/customer/logout/${customerId}`);
+      }
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      dispatch(logout());
+      dispatch(changeRole());
+      dispatch(cartCount(0));
+      localStorage.clear("id")
+      localStorage.clear("token")
+      localStorage.clear("role")
+      navigate("/")
+    }
   }
   return (
     <>
