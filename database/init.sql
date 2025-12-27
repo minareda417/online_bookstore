@@ -59,11 +59,11 @@ CREATE TABLE
     replenishment_order (
         publisher_id INT,
         book_isbn VARCHAR(13),
-        send_date DATE NOT NULL,
-        receive_date DATE,
+        send_date DATETIME NOT NULL,
+        receive_date DATETIME,
         quantity INT NOT NULL,
         status ENUM ('confirmed', 'cancelled', 'pending') DEFAULT 'pending',
-        PRIMARY KEY (publisher_id, book_isbn),
+        PRIMARY KEY (publisher_id, book_isbn, send_date),
         FOREIGN KEY (publisher_id) REFERENCES publisher (publisher_id) ON DELETE CASCADE,
         FOREIGN KEY (book_isbn) REFERENCES book (isbn) ON DELETE CASCADE
     );
@@ -149,7 +149,7 @@ AND OLD.quantity >= OLD.threshold THEN
 INSERT INTO
     replenishment_order (publisher_id, book_isbn, send_date, quantity)
 VALUES
-    (NEW.publisher_id, NEW.isbn, CURDATE(), 20);
+    (NEW.publisher_id, NEW.isbn, NOW(), 20);
 
 END IF;
 

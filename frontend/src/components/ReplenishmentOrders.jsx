@@ -20,10 +20,10 @@ const ReplenishmentOrders = () => {
         }
     };
 
-    const updateOrderStatus = async (publisherId, bookIsbn, status) => {
+    const updateOrderStatus = async (publisherId, bookIsbn, sendDate, status) => {
         try {
             await axios.put(
-                `${process.env.REACT_APP_BASE_URL}/admin/replenishment/update-status?publisher_id=${publisherId}&book_isbn=${bookIsbn}&status=${status}`,
+                `${process.env.REACT_APP_BASE_URL}/admin/replenishment/update-status?publisher_id=${publisherId}&book_isbn=${bookIsbn}&send_date=${sendDate}&status=${status}`,
                 {},
                 { headers }
             );
@@ -95,13 +95,13 @@ const ReplenishmentOrders = () => {
                                             {order.status === "pending" && (
                                                 <div className='flex gap-2 justify-center'>
                                                     <button
-                                                        onClick={() => updateOrderStatus(order.publisher_id, order.book_isbn, "confirmed")}
+                                                        onClick={() => updateOrderStatus(order.publisher_id, order.book_isbn, order.send_date, "confirmed")}
                                                         className='bg-green-600 hover:bg-green-700 px-4 py-1 rounded text-sm'
                                                     >
                                                         Accept
                                                     </button>
                                                     <button
-                                                        onClick={() => updateOrderStatus(order.publisher_id, order.book_isbn, "cancelled")}
+                                                        onClick={() => updateOrderStatus(order.publisher_id, order.book_isbn, order.send_date, "cancelled")}
                                                         className='bg-red-600 hover:bg-red-700 px-4 py-1 rounded text-sm'
                                                     >
                                                         Reject

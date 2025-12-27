@@ -211,6 +211,14 @@ def view_replenishment():
             FROM replenishment_order
         """)
         orders = cur.fetchall()
+        
+        # Format dates to strings
+        for order in orders:
+            if order.get('send_date'):
+                order['send_date'] = order['send_date'].strftime('%Y-%m-%d %H:%M:%S')
+            if order.get('receive_date'):
+                order['receive_date'] = order['receive_date'].strftime('%Y-%m-%d %H:%M:%S')
+        
         return {"replenishment_orders": orders}
 
     except Exception as e:
@@ -222,6 +230,7 @@ def view_replenishment():
 def update_replenishment_status(
     publisher_id: int,
     book_isbn: str,
+    send_date: str,
     status: str = Query(..., description="New status: pending, confirmed, cancelled")
 ):
     allowed_status = {"pending", "confirmed", "cancelled"}
@@ -234,8 +243,8 @@ def update_replenishment_status(
     # fetch current status and quantity
     cur.execute("""
         SELECT status, quantity FROM replenishment_order
-        WHERE publisher_id=%s AND book_isbn=%s
-    """, (publisher_id, book_isbn))
+        WHERE publisher_id=%s AND book_isbn=%s AND send_date=%s
+    """, (publisher_id, book_isbn, send_date))
     order = cur.fetchone()
     if not order:
         raise HTTPException(404, "Replenishment order not found")
@@ -246,9 +255,9 @@ def update_replenishment_status(
     # update status (the database trigger will automatically update book quantity when status='confirmed')
     cur.execute("""
         UPDATE replenishment_order
-        SET status=%s, receive_date = CASE WHEN %s='confirmed' THEN CURDATE() ELSE receive_date END
-        WHERE publisher_id=%s AND book_isbn=%s
-    """, (status, status, publisher_id, book_isbn))
+        SET status=%s, receive_date = CASE WHEN %s='confirmed' THEN NOW() ELSE receive_date END
+        WHERE publisher_id=%s AND book_isbn=%s AND send_date=%s
+    """, (status, status, publisher_id, book_isbn, send_date))
 
     conn.commit()
     return {"message": f"Replenishment order status updated to '{status}'"}
